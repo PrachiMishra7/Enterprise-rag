@@ -1,49 +1,95 @@
+import { Users, Scale, Landmark, Monitor, Search, Target, Ruler, ArrowRight } from 'lucide-react';
+
 export default function Agents({ navigateTo }) {
   const agents = [
-    { id:'hr', icon:'👥', name:'HR Agent', color:'#22c55e', desc:'Handles leave policies, payroll, attendance, employee guidelines, onboarding, and performance reviews.' },
-    { id:'legal', icon:'⚖️', name:'Legal Agent', color:'#7c5cfc', desc:'Handles NDAs, contracts, compliance documents, data protection, IP agreements, and legal policies.' },
-    { id:'finance', icon:'💰', name:'Finance Agent', color:'#f59e0b', desc:'Handles expense claims, reimbursements, travel allowances, invoices, and budgeting procedures.' },
-    { id:'it', icon:'🖥️', name:'IT Support Agent', color:'#3b82f6', desc:'Handles helpdesk tickets, password resets, software requests, equipment policies, and SOPs.' },
+    { id:'hr', icon: Users, name:'HR Agent', color:'bg-green-500', border:'border-green-500/20', bg:'bg-green-500/10', text:'text-green-500', desc:'Handles leave policies, payroll, attendance, employee guidelines, onboarding, and performance reviews.' },
+    { id:'legal', icon: Scale, name:'Legal Agent', color:'bg-purple-500', border:'border-purple-500/20', bg:'bg-purple-500/10', text:'text-purple-500', desc:'Handles NDAs, contracts, compliance documents, data protection, IP agreements, and legal policies.' },
+    { id:'finance', icon: Landmark, name:'Finance Agent', color:'bg-amber-500', border:'border-amber-500/20', bg:'bg-amber-500/10', text:'text-amber-500', desc:'Handles expense claims, reimbursements, travel allowances, invoices, and budgeting procedures.' },
+    { id:'it', icon: Monitor, name:'IT Support Agent', color:'bg-blue-500', border:'border-blue-500/20', bg:'bg-blue-500/10', text:'text-blue-500', desc:'Handles helpdesk tickets, password resets, software requests, equipment policies, and SOPs.' },
   ];
 
   return (
-    <div className="page">
-      <div style={{ marginBottom: '20px', color: 'var(--text2)', fontSize: '13px', maxWidth: '640px' }}>
-        Queries are automatically routed to the correct specialized agent using intent classification. Each agent retrieves context only from its relevant department documents.
-      </div>
-      <div className="agents-grid">
-        {agents.map(a => (
-          <div key={a.id} className="agent-card">
-            <div className="agent-header">
-              <div style={{ fontSize: '28px' }}>{a.icon}</div>
-              <div>
-                <div className="agent-name">{a.name}</div>
-                <div style={{ width: '24px', height: '3px', background: a.color, borderRadius: '2px', marginTop: '4px' }}></div>
+    <div className="flex-1 overflow-y-auto p-8 md:p-12">
+      <div className="max-w-6xl mx-auto space-y-12">
+        
+        {/* Agents Intro */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">AI Agents</h1>
+          <p className="text-muted-foreground text-base max-w-3xl mb-8">
+            Queries are automatically routed to the correct specialized agent using intent classification. Each agent retrieves context exclusively from its designated department documents, preventing data leakage across siloes.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {agents.map(a => {
+              const Icon = a.icon;
+              return (
+                <div key={a.id} className="group bg-card border border-border rounded-xl p-6 shadow-sm hover:border-border/80 hover:shadow-md transition-all flex flex-col">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`w-12 h-12 rounded-lg ${a.bg} ${a.text} flex items-center justify-center border ${a.border}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">{a.name}</h3>
+                      <div className={`w-8 h-1 ${a.color} rounded-full mt-1.5`}></div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6 flex-1 leading-relaxed">
+                    {a.desc}
+                  </p>
+                  <button 
+                    className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-secondary hover:bg-secondary/80 text-foreground border border-border rounded-lg text-sm font-semibold transition-colors"
+                    onClick={() => navigateTo('chat', `What can you help me with regarding ${a.id}?`)}
+                  >
+                    Ask this Agent
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Hallucination Detection Engine */}
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground mb-6">Hallucination Guard Engine</h2>
+          <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
+            <p className="text-sm text-muted-foreground mb-8 max-w-3xl">
+              Every response generated by an agent goes through a deterministic multi-signal hallucination detection pipeline before being returned to the user.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center border border-border">
+                  <Search className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">Word Overlap Score</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">Measures how much of the response vocabulary is directly grounded in the retrieved context vs. generative hallucination.</p>
+              </div>
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center border border-border">
+                  <Target className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">Specific Claim Verification</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">Checks if explicitly generated figures, numbers, dates, and strict claims appear verbatim in source documents.</p>
+              </div>
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center border border-border">
+                  <Ruler className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">N-Gram Coverage Score</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">Verifies n-gram semantic overlap between the LLM generation and the retrieved vector chunks.</p>
               </div>
             </div>
-            <div className="agent-desc">{a.desc}</div>
-            <button 
-              className="btn btn-ghost btn-sm" 
-              style={{ marginTop: '12px', width: '100%', justifyContent: 'center' }}
-              onClick={() => navigateTo('chat', `What can you help me with regarding ${a.id}?`)}
-            >
-              Ask this Agent →
-            </button>
-          </div>
-        ))}
-      </div>
 
-      <div className="section-title" style={{ marginTop: '28px' }}>Hallucination Detection</div>
-      <div className="doc-card" style={{ maxWidth: '640px' }}>
-        <div style={{ fontSize: '13px', color: 'var(--text2)', lineHeight: 1.8 }}>
-          <p>Every response goes through a multi-signal hallucination detection pipeline:</p>
-          <br/>
-          <p>🔍 <strong>Word Overlap Score</strong> — measures how much response vocabulary is grounded in retrieved context</p>
-          <p>🎯 <strong>Specific Claim Verification</strong> — checks if figures, numbers, and explicit claims appear in source documents</p>
-          <p>📏 <strong>Coverage Score</strong> — verifies n-gram overlap between response and retrieved chunks</p>
-          <br/>
-          <p>Responses with confidence below 45% are flagged with a ⚠️ warning banner.</p>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="text-xs font-semibold text-amber-500 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                Responses with a final fused confidence below 45% are automatically flagged with a warning banner in the chat UI.
+              </p>
+            </div>
+          </div>
         </div>
+        
       </div>
     </div>
   );

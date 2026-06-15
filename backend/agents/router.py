@@ -1,4 +1,6 @@
 import re
+import os
+import requests
 from typing import List, Dict, Any
 
 
@@ -35,19 +37,45 @@ AGENT_SYSTEM_PROMPTS = {
 
 
 def detect_agent(query: str) -> str:
-    """Route query to the best specialized agent using keyword matching."""
-    query_lower = query.lower()
-    scores = {agent: 0 for agent in AGENT_KEYWORDS}
+    """Route query to the best specialized agent using LLM Intent Classification."""
+    groq_api_key = os.environ.get("GROQ_API_KEY", "")
+    if not groq_api_key:
+        return "general"  # Fallback if no key
 
-    for agent, keywords in AGENT_KEYWORDS.items():
-        for kw in keywords:
-            if kw in query_lower:
-                scores[agent] += 1
+    prompt = f"""Classify the following enterprise query into exactly one department.
+Departments:
+hr
+finance
+legal
+it
+general
 
-    best_agent = max(scores, key=scores.get)
-    if scores[best_agent] == 0:
-        return "general"
-    return best_agent
+Query: {query}
+Return only the department name in lowercase, nothing else."""
+
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.0,
+                "max_tokens": 10
+            },
+            timeout=10,
+            verify=False
+        )
+        if response.status_code == 200:
+            agent = response.json()["choices"][0]["message"]["content"].strip().lower()
+            # Clean up the response in case it outputs extra punctuation
+            agent = ''.join(c for c in agent if c.isalpha())
+            if agent in AGENT_SYSTEM_PROMPTS:
+                return agent
+    except Exception:
+        pass
+    
+    return "general"
 
 
 def format_context(chunks: List[dict]) -> str:
@@ -56,9 +84,6 @@ def format_context(chunks: List[dict]) -> str:
         parts.append(f"[Source {i}: {chunk['source']}]\n{chunk['text']}")
     return "\n\n---\n\n".join(parts)
 
-
-import os
-import requests
 
 def generate_response(query: str, context: str, agent: str, chunks: List[dict]) -> dict:
     """

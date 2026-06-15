@@ -52,14 +52,23 @@ function App() {
   };
 
   return (
-    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+    <div className={`flex h-screen overflow-hidden relative bg-background text-foreground ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      <div 
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+        onClick={() => setSidebarOpen(false)}
+      ></div>
       <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} />
-      <div className="main">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-background">
         <Header page={page} setSidebarOpen={setSidebarOpen} />
         {renderContent()}
       </div>
-      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+      {toast && (
+        <div className={`fixed bottom-8 right-8 px-5 py-3 rounded-md text-sm font-medium animate-in slide-in-from-bottom-5 z-50 shadow-lg bg-surface border ${
+          toast.type === 'success' ? 'border-l-4 border-l-green-600 text-foreground' : 'border-l-4 border-l-red-600 text-foreground'
+        }`}>
+          {toast.msg}
+        </div>
+      )}
     </div>
   );
 }

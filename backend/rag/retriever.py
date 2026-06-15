@@ -1,7 +1,10 @@
 import math
-import re
+import os
+import faiss
+import numpy as np
 from typing import List, Dict, Any
-from collections import Counter
+from sentence_transformers import SentenceTransformer
+from rank_bm25 import BM25Okapi
 
 # Access level hierarchy
 ROLE_ACCESS_MAP = {
@@ -14,90 +17,17 @@ ROLE_ACCESS_MAP = {
     "admin": ["employee", "manager", "hr_admin", "legal_admin", "finance_admin", "it_admin", "admin"]
 }
 
-# Department-specific keyword boosting
-DEPARTMENT_KEYWORDS = {
-    "hr": ["leave", "holiday", "salary", "payroll", "attendance", "employee", "onboarding", "policy", "conduct", "maternity", "paternity"],
-    "legal": ["contract", "nda", "compliance", "agreement", "legal", "liability", "terms", "clause", "confidential"],
-    "finance": ["expense", "reimbursement", "invoice", "budget", "payment", "finance", "allowance", "claim", "travel"],
-    "it": ["software", "hardware", "password", "ticket", "support", "network", "security", "laptop", "install", "vpn"],
-    "general": []
-}
-
-
-class BM25:
-    """Lightweight BM25 implementation for sparse retrieval."""
-
-    def __init__(self, k1=1.5, b=0.75):
-        self.k1 = k1
-        self.b = b
-        self.corpus = []
-        self.tokenized = []
-        self.idf = {}
-        self.avg_dl = 0
-
-    def fit(self, corpus: List[str]):
-        self.corpus = corpus
-        self.tokenized = [self._tokenize(doc) for doc in corpus]
-        self.avg_dl = sum(len(t) for t in self.tokenized) / max(len(self.tokenized), 1)
-        self._compute_idf()
-
-    def _tokenize(self, text: str) -> List[str]:
-        return re.findall(r'\b\w+\b', text.lower())
-
-    def _compute_idf(self):
-        n = len(self.tokenized)
-        df = {}
-        for tokens in self.tokenized:
-            for token in set(tokens):
-                df[token] = df.get(token, 0) + 1
-        self.idf = {
-            term: math.log((n - freq + 0.5) / (freq + 0.5) + 1)
-            for term, freq in df.items()
-        }
-
-    def score(self, query: str) -> List[float]:
-        query_tokens = self._tokenize(query)
-        scores = []
-        for doc_tokens in self.tokenized:
-            tf = Counter(doc_tokens)
-            dl = len(doc_tokens)
-            score = 0
-            for token in query_tokens:
-                if token not in self.idf:
-                    continue
-                freq = tf.get(token, 0)
-                numerator = freq * (self.k1 + 1)
-                denominator = freq + self.k1 * (1 - self.b + self.b * dl / self.avg_dl)
-                score += self.idf[token] * (numerator / denominator)
-            scores.append(score)
-        return scores
-
-
-def cosine_similarity_tfidf(query: str, doc: str) -> float:
-    """Simple TF-IDF cosine similarity for semantic-like dense retrieval."""
-    def tokenize(text):
-        return re.findall(r'\b\w+\b', text.lower())
-
-    q_tokens = tokenize(query)
-    d_tokens = tokenize(doc)
-    all_terms = set(q_tokens + d_tokens)
-
-    q_vec = {t: q_tokens.count(t) for t in all_terms}
-    d_vec = {t: d_tokens.count(t) for t in all_terms}
-
-    dot = sum(q_vec[t] * d_vec[t] for t in all_terms)
-    q_norm = math.sqrt(sum(v ** 2 for v in q_vec.values()))
-    d_norm = math.sqrt(sum(v ** 2 for v in d_vec.values()))
-
-    if q_norm == 0 or d_norm == 0:
-        return 0.0
-    return dot / (q_norm * d_norm)
-
-
 class HybridRetriever:
-    def __init__(self):
+    """Enterprise-grade Hybrid RAG using FAISS (Dense) and BM25 (Sparse)."""
+
+    def __init__(self, model_name: str = 'all-MiniLM-L6-v2'):
+        self.model = SentenceTransformer(model_name)
+        self.dimension = self.model.get_sentence_embedding_dimension()
+        
         self.chunks: List[dict] = []
-        self.bm25 = BM25()
+        self.faiss_index = None
+        self.bm25_index = None
+        
         self._initialized = False
 
     def _get_all_chunks(self, db):
@@ -106,56 +36,71 @@ class HybridRetriever:
 
     def _build_index(self, db):
         self.chunks = self._get_all_chunks(db)
-        if self.chunks:
-            self.bm25.fit([c["text"] for c in self.chunks])
+        if not self.chunks:
+            self._initialized = True
+            return
+
+        texts = [c["text"] for c in self.chunks]
+        
+        # Build BM25 Sparse Index
+        tokenized_corpus = [doc.lower().split() for doc in texts]
+        self.bm25_index = BM25Okapi(tokenized_corpus)
+        
+        # Build FAISS Dense Index
+        embeddings = self.model.encode(texts, convert_to_numpy=True)
+        # Normalize embeddings for cosine similarity using inner product
+        faiss.normalize_L2(embeddings)
+        self.faiss_index = faiss.IndexFlatIP(self.dimension)
+        self.faiss_index.add(embeddings)
+        
         self._initialized = True
 
     def add_documents(self, new_chunks: List[dict], metadata: dict):
-        self._initialized = False  # Force re-index
+        self._initialized = False  # Force re-index on next query
 
     def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
-        self._build_index(db)
+        if not self._initialized:
+            self._build_index(db)
 
         if not self.chunks:
             return []
 
-        allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
-        accessible = [c for c in self.chunks if c["access_level"] in allowed_access]
-
-        if not accessible:
-            return []
-
-        # BM25 sparse scores
-        all_texts = [c["text"] for c in self.chunks]
-        bm25_all = self.bm25.score(query)
-        chunk_id_to_bm25 = {c["id"]: bm25_all[i] for i, c in enumerate(self.chunks)}
+        # 1. Sparse Search (BM25)
+        tokenized_query = query.lower().split()
+        bm25_scores = self.bm25_index.get_scores(tokenized_query)
+        
+        # 2. Dense Search (FAISS)
+        query_embedding = self.model.encode([query], convert_to_numpy=True)
+        faiss.normalize_L2(query_embedding)
+        dense_scores, _ = self.faiss_index.search(query_embedding, len(self.chunks))
+        
+        # Map dense scores back to original indices since FAISS sorts the output
+        # Wait, faiss search returns sorted by distance, but we need raw scores for each chunk.
+        # Actually, `dense_scores` contains distances, let's just do a manual dot product for simplicity if k is small,
+        # or map them properly. FAISS search returns (distances, indices).
+        dense_scores_raw = np.zeros(len(self.chunks))
+        distances, indices = self.faiss_index.search(query_embedding, len(self.chunks))
+        for i, idx in enumerate(indices[0]):
+            dense_scores_raw[idx] = distances[0][i]
 
         results = []
-        for chunk in accessible:
-            bm25_score = chunk_id_to_bm25.get(chunk["id"], 0)
-            dense_score = cosine_similarity_tfidf(query, chunk["text"])
+        allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
 
-            # Combine scores (50/50 hybrid)
-            hybrid_score = 0.5 * self._normalize(bm25_score, 0, 10) + 0.5 * dense_score
+        for i, chunk in enumerate(self.chunks):
+            if chunk["access_level"] not in allowed_access:
+                continue
 
-            # Department keyword boost
-            dept = chunk.get("department", "general")
-            keywords = DEPARTMENT_KEYWORDS.get(dept, [])
-            query_lower = query.lower()
-            boost = sum(0.05 for kw in keywords if kw in query_lower)
-            hybrid_score += boost
+            # Normalize scores roughly
+            b_score = bm25_scores[i] / (max(bm25_scores) + 1e-6)
+            d_score = dense_scores_raw[i]  # already between -1 and 1
 
+            # Combine (50% Dense, 50% Sparse)
+            hybrid_score = (0.5 * b_score) + (0.5 * d_score)
+            
             results.append({**chunk, "score": hybrid_score})
 
         # Sort and return top_k
         results.sort(key=lambda x: x["score"], reverse=True)
         top = results[:top_k]
 
-        # Filter out very low relevance
-        threshold = 0.01
-        return [r for r in top if r["score"] > threshold]
-
-    def _normalize(self, value: float, min_val: float, max_val: float) -> float:
-        if max_val == min_val:
-            return 0.0
-        return min(1.0, max(0.0, (value - min_val) / (max_val - min_val)))
+        return [r for r in top if r["score"] > 0.1]

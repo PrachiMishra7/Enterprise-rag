@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/AuthContext';
+import { Menu } from 'lucide-react';
 
 export default function Header({ page, setSidebarOpen }) {
   const titles = {
@@ -12,15 +12,19 @@ export default function Header({ page, setSidebarOpen }) {
   const h = titles[page] || titles.overview;
 
   return (
-    <div className="header">
-      <div className="header-left">
-        <button className="menu-btn" onClick={() => setSidebarOpen(true)}>☰</button>
+    <div className="flex items-center justify-between px-8 py-5 border-b border-border bg-card z-20">
+      <div className="flex items-center gap-4">
+        <button 
+          className="md:hidden p-2 rounded-md border border-border bg-background hover:bg-secondary text-foreground" 
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
         <div>
-          <div className="header-title">{h.title}</div>
-          <div className="header-sub">{h.sub}</div>
+          <div className="text-lg font-semibold tracking-tight text-foreground">{h.title}</div>
+          <div className="text-sm text-muted-foreground mt-0.5">{h.sub}</div>
         </div>
       </div>
-      {/* For chat page, clear chat button would be here or inside chat component */}
     </div>
   );
 }
