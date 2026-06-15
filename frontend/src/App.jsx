@@ -52,14 +52,14 @@ function App() {
   };
 
   return (
-    <div className={`app \${sidebarOpen ? 'sidebar-open' : ''}`}>
+    <div className={`app ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
       <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} />
       <div className="main">
         <Header page={page} setSidebarOpen={setSidebarOpen} />
         {renderContent()}
       </div>
-      {toast && <div className={`toast toast-\${toast.type}`}>{toast.msg}</div>}
+      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
     </div>
   );
 }

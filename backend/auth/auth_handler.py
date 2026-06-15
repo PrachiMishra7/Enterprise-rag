@@ -3,13 +3,13 @@ import bcrypt
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
+from sqlalchemy.orm import Session
+
+from models.database import User
 
 SECRET_KEY = "enterprise-rag-secret-key-2024-change-in-production"
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 24
-
-# In-memory user store (replace with PostgreSQL/MongoDB in production)
-USERS_DB: dict = {}
 
 # Role hierarchy and permissions
 ROLE_PERMISSIONS = {
@@ -52,11 +52,7 @@ ROLE_PERMISSIONS = {
 
 
 class AuthHandler:
-    def __init__(self):
-        # Seed demo users
-        self._seed_demo_users()
-
-    def _seed_demo_users(self):
+    def seed_demo_users(self, db: Session):
         demo_users = [
             {"name": "Alice (Employee)", "email": "alice@company.com", "password": "EnterprisePass!2024", "role": "employee", "department": "general"},
             {"name": "Bob (Manager)", "email": "bob@company.com", "password": "EnterprisePass!2024", "role": "manager", "department": "general"},
@@ -65,42 +61,49 @@ class AuthHandler:
             {"name": "Eve (Finance Admin)", "email": "eve@company.com", "password": "EnterprisePass!2024", "role": "finance_admin", "department": "finance"},
             {"name": "Admin", "email": "admin@company.com", "password": "AdminPass!2024", "role": "admin", "department": "general"},
         ]
+        
         for u in demo_users:
-            hashed = bcrypt.hashpw(u["password"].encode(), bcrypt.gensalt()).decode()
-            uid = str(uuid.uuid4())
-            USERS_DB[u["email"]] = {
-                "id": uid,
-                "name": u["name"],
-                "email": u["email"],
-                "password_hash": hashed,
-                "role": u["role"],
-                "department": u["department"],
-                "created_at": datetime.utcnow().isoformat()
-            }
+            if not db.query(User).filter(User.email == u["email"]).first():
+                hashed = bcrypt.hashpw(u["password"].encode(), bcrypt.gensalt()).decode()
+                db_user = User(
+                    name=u["name"],
+                    email=u["email"],
+                    password_hash=hashed,
+                    role=u["role"],
+                    department=u["department"]
+                )
+                db.add(db_user)
+        db.commit()
 
-    def register_user(self, user_data) -> Optional[str]:
-        if user_data.email in USERS_DB:
+    def register_user(self, db: Session, user_data) -> Optional[str]:
+        if db.query(User).filter(User.email == user_data.email).first():
             return None
         hashed = bcrypt.hashpw(user_data.password.encode(), bcrypt.gensalt()).decode()
-        uid = str(uuid.uuid4())
-        USERS_DB[user_data.email] = {
-            "id": uid,
-            "name": user_data.name,
-            "email": user_data.email,
-            "password_hash": hashed,
-            "role": user_data.role,
-            "department": user_data.department,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        return uid
+        db_user = User(
+            name=user_data.name,
+            email=user_data.email,
+            password_hash=hashed,
+            role=user_data.role,
+            department=user_data.department
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user.id
 
-    def authenticate_user(self, email: str, password: str) -> Optional[dict]:
-        user = USERS_DB.get(email)
+    def authenticate_user(self, db: Session, email: str, password: str) -> Optional[dict]:
+        user = db.query(User).filter(User.email == email).first()
         if not user:
             return None
-        if not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
+        if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
             return None
-        return user
+        return {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "department": user.department
+        }
 
     def create_token(self, user: dict) -> str:
         payload = {

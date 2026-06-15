@@ -20,10 +20,10 @@ export default function Upload({ showToast, loadDocuments }) {
 
     try {
       const data = await apiCall('POST', '/documents/upload', form, true, token);
-      showToast(`✅ "\${data.filename}" uploaded — \${data.chunks_created} chunks indexed`, 'success');
+      showToast(`✅ "${data.filename}" uploaded — ${data.chunks_created} chunks indexed`, 'success');
       loadDocuments();
     } catch (e) {
-      showToast(`❌ \${e.message}`, 'error');
+      showToast(`❌ ${e.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export default function Upload({ showToast, loadDocuments }) {
       </div>
 
       <div 
-        className={`upload-zone \${dragActive ? 'dragging' : ''}`}
+        className={`upload-zone ${dragActive ? 'dragging' : ''}`}
         onDragOver={e => { e.preventDefault(); setDragActive(true); }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}

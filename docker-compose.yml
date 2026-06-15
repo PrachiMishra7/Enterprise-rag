@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: enterprise_user
+      POSTGRES_PASSWORD: enterprise_password
+      POSTGRES_DB: enterprise_rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -9,8 +21,12 @@ services:
       - "8000:8000"
     environment:
       - SECRET_KEY=enterprise-rag-secret-key-change-in-production
+      - DATABASE_URL=postgresql://enterprise_user:enterprise_password@db:5432/enterprise_rag
+      - GROQ_API_KEY=${GROQ_API_KEY:-""}
     volumes:
       - ./backend:/app
+    depends_on:
+      - db
     restart: unless-stopped
 
   frontend:
@@ -22,3 +38,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  postgres_data:

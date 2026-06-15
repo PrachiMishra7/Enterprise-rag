@@ -3,10 +3,9 @@ import io
 import re
 from datetime import datetime
 from typing import List, Dict, Any
+from sqlalchemy.orm import Session
 
-# In-memory document store (replace with PostgreSQL in production)
-DOCUMENTS_DB: List[Dict] = []
-CHUNKS_DB: List[Dict] = []
+from models.database import Document, DocumentChunk
 
 # Role access mapping
 ROLE_ACCESS_MAP = {
@@ -19,15 +18,17 @@ ROLE_ACCESS_MAP = {
     "admin": ["employee", "manager", "hr_admin", "legal_admin", "finance_admin", "it_admin", "admin"]
 }
 
-
 class DocumentProcessor:
     def __init__(self):
         self.chunk_size = 500
         self.chunk_overlap = 50
-        self._seed_demo_documents()
 
-    def _seed_demo_documents(self):
+    def seed_demo_documents(self, db: Session):
         """Seed the system with demo enterprise documents."""
+        # Only seed if db is empty
+        if db.query(Document).first() is not None:
+            return
+
         demo_docs = [
             {
                 "department": "hr",
@@ -69,7 +70,7 @@ Maximum 30 days unpaid leave per year, subject to manager approval.
                 "content": """
 EMPLOYEE CODE OF CONDUCT - ACME Corporation
 
-PROFESSIONAL BEHAVIOR
+PROFESSIONIONAL BEHAVIOR
 All employees must maintain professional conduct at all times.
 Harassment, discrimination, or bullying of any kind is strictly prohibited.
 Employees must respect confidentiality of company and client information.
@@ -197,63 +198,72 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
         ]
 
         for doc in demo_docs:
-            doc_id = str(uuid.uuid4())
             content = doc["content"].strip()
             chunks = self._split_into_chunks(content)
 
-            DOCUMENTS_DB.append({
-                "id": doc_id,
-                "filename": doc["filename"],
-                "department": doc["department"],
-                "access_level": doc["access_level"],
-                "uploaded_by": "system",
-                "uploaded_at": datetime.utcnow().isoformat(),
-                "chunks_count": len(chunks)
-            })
+            # Look up admin user to assign as uploader if needed, or leave null for system
+            db_doc = Document(
+                filename=doc["filename"],
+                department=doc["department"],
+                access_level=doc["access_level"],
+                chunks_count=len(chunks)
+            )
+            db.add(db_doc)
+            db.commit()
+            db.refresh(db_doc)
 
             for i, chunk in enumerate(chunks):
-                CHUNKS_DB.append({
-                    "id": str(uuid.uuid4()),
-                    "document_id": doc_id,
-                    "source": doc["filename"],
-                    "department": doc["department"],
-                    "access_level": doc["access_level"],
-                    "text": chunk,
-                    "chunk_index": i
-                })
+                db_chunk = DocumentChunk(
+                    document_id=db_doc.id,
+                    source=doc["filename"],
+                    department=doc["department"],
+                    access_level=doc["access_level"],
+                    text=chunk,
+                    chunk_index=i
+                )
+                db.add(db_chunk)
+            db.commit()
 
-    def process_document(self, content: bytes, filename: str, department: str,
+    def process_document(self, db: Session, content: bytes, filename: str, department: str,
                          access_level: str, uploaded_by: str) -> dict:
         text = self._extract_text(content, filename)
         chunks = self._split_into_chunks(text)
-        doc_id = str(uuid.uuid4())
 
-        DOCUMENTS_DB.append({
-            "id": doc_id,
-            "filename": filename,
-            "department": department,
-            "access_level": access_level,
-            "uploaded_by": uploaded_by,
-            "uploaded_at": datetime.utcnow().isoformat(),
-            "chunks_count": len(chunks)
-        })
+        db_doc = Document(
+            filename=filename,
+            department=department,
+            access_level=access_level,
+            uploaded_by=uploaded_by,
+            chunks_count=len(chunks)
+        )
+        db.add(db_doc)
+        db.commit()
+        db.refresh(db_doc)
 
         chunk_objects = []
         for i, chunk in enumerate(chunks):
-            chunk_obj = {
-                "id": str(uuid.uuid4()),
-                "document_id": doc_id,
+            db_chunk = DocumentChunk(
+                document_id=db_doc.id,
+                source=filename,
+                department=department,
+                access_level=access_level,
+                text=chunk,
+                chunk_index=i
+            )
+            db.add(db_chunk)
+            chunk_objects.append({
+                "id": db_chunk.id,
+                "document_id": db_doc.id,
                 "source": filename,
                 "department": department,
                 "access_level": access_level,
                 "text": chunk,
                 "chunk_index": i
-            }
-            CHUNKS_DB.append(chunk_obj)
-            chunk_objects.append(chunk_obj)
+            })
+        db.commit()
 
         return {
-            "document_id": doc_id,
+            "document_id": db_doc.id,
             "chunks": chunk_objects,
             "chunks_count": len(chunks),
             "metadata": {"department": department, "access_level": access_level}
@@ -284,13 +294,35 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
 
         return chunks if chunks else [text[:self.chunk_size]]
 
-    def list_documents(self, role: str) -> List[dict]:
+    def list_documents(self, db: Session, role: str) -> List[dict]:
         allowed_access = ROLE_ACCESS_MAP.get(role, ["employee"])
+        docs = db.query(Document).filter(Document.access_level.in_(allowed_access)).all()
+        
         return [
-            {k: v for k, v in doc.items() if k != "chunks_count" or True}
-            for doc in DOCUMENTS_DB
-            if doc["access_level"] in allowed_access
+            {
+                "id": doc.id,
+                "filename": doc.filename,
+                "department": doc.department,
+                "access_level": doc.access_level,
+                "uploaded_by": doc.uploaded_by,
+                "uploaded_at": doc.uploaded_at.isoformat(),
+                "chunk_count": doc.chunks_count,
+                "file_size": 0  # To maintain backwards compatibility if used
+            }
+            for doc in docs
         ]
 
-    def get_all_chunks(self) -> List[dict]:
-        return CHUNKS_DB
+    def get_all_chunks(self, db: Session) -> List[dict]:
+        chunks = db.query(DocumentChunk).all()
+        return [
+            {
+                "id": c.id,
+                "document_id": c.document_id,
+                "source": c.source,
+                "department": c.department,
+                "access_level": c.access_level,
+                "text": c.text,
+                "chunk_index": c.chunk_index
+            }
+            for c in chunks
+        ]

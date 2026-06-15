@@ -25,7 +25,7 @@ export default function Agents({ navigateTo }) {
             <button 
               className="btn btn-ghost btn-sm" 
               style={{ marginTop: '12px', width: '100%', justifyContent: 'center' }}
-              onClick={() => navigateTo('chat', `What can you help me with regarding \${a.id}?`)}
+              onClick={() => navigateTo('chat', `What can you help me with regarding ${a.id}?`)}
             >
               Ask this Agent →
             </button>

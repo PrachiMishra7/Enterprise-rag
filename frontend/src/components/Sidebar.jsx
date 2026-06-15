@@ -26,7 +26,7 @@ export default function Sidebar({ currentPage, setPage }) {
         {items.map(item => (
           <div 
             key={item.id}
-            className={`nav-item \${currentPage === item.id ? 'active' : ''}`}
+            className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
             onClick={() => setPage(item.id)}
           >
             <div className="nav-icon">{item.icon}</div>
@@ -38,7 +38,7 @@ export default function Sidebar({ currentPage, setPage }) {
       <div className="user-card">
         <div className="user-name">{user?.name}</div>
         <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' }}>{user?.email}</div>
-        <span className={`user-role-badge badge-\${user?.role}`}>
+        <span className={`user-role-badge badge-${user?.role}`}>
           {user?.role.replace('_', ' ')}
         </span>
         <button 

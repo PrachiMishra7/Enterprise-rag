@@ -44,13 +44,13 @@ export default function Overview({ documents, navigateTo }) {
             key={d.dept} 
             className="doc-card" 
             style={{ cursor: 'pointer' }}
-            onClick={() => navigateTo('chat', `Tell me about \${d.dept} policies`)}
+            onClick={() => navigateTo('chat', `Tell me about ${d.dept} policies`)}
           >
             <div style={{ fontSize: '28px', marginBottom: '8px' }}>{d.icon}</div>
             <div className="doc-name">{d.name}</div>
             <div className="doc-meta">{d.desc}</div>
             <div className="doc-tags" style={{ marginTop: '10px' }}>
-              <span className={`tag tag-\${d.dept}`}>{deptCounts[d.dept] || 0} docs</span>
+              <span className={`tag tag-${d.dept}`}>{deptCounts[d.dept] || 0} docs</span>
             </div>
           </div>
         ))}

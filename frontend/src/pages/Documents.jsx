@@ -39,7 +39,7 @@ export default function Documents({ documents, loadDocuments }) {
                 Indexed • {d.chunk_count} chunks • Size: {d.file_size} bytes
               </div>
               <div className="doc-tags">
-                <span className={`tag tag-\${d.department}`}>{d.department}</span>
+                <span className={`tag tag-${d.department}`}>{d.department}</span>
                 <span className="tag tag-general" style={{ background: 'rgba(255,255,255,0.1)' }}>{d.access_level}</span>
               </div>
             </div>

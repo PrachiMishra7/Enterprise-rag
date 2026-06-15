@@ -57,28 +57,13 @@ def format_context(chunks: List[dict]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
+import os
+import requests
+
 def generate_response(query: str, context: str, agent: str, chunks: List[dict]) -> dict:
     """
-    Generate a response from context without an LLM API.
-    In production, replace this with actual LLM call (OpenAI/Llama/Mistral).
+    Generate a response using local Ollama API.
     """
-    # Extract the most relevant sentences from context
-    query_words = set(re.findall(r'\b\w{4,}\b', query.lower()))
-    context_sentences = re.split(r'(?<=[.!?])\s+|\n', context)
-
-    scored_sentences = []
-    for sent in context_sentences:
-        sent = sent.strip()
-        if len(sent) < 20:
-            continue
-        sent_words = set(re.findall(r'\b\w{4,}\b', sent.lower()))
-        overlap = len(query_words & sent_words)
-        if overlap > 0:
-            scored_sentences.append((overlap, sent))
-
-    scored_sentences.sort(key=lambda x: x[0], reverse=True)
-    top_sentences = [s[1] for s in scored_sentences[:5]]
-
     # Build citations
     citations = []
     for i, chunk in enumerate(chunks[:3]):
@@ -89,16 +74,50 @@ def generate_response(query: str, context: str, agent: str, chunks: List[dict]) 
             "page": chunk.get("chunk_index", 0) + 1
         })
 
-    if not top_sentences:
-        answer = (
-            f"Based on the available {agent.upper()} documents, I found relevant information "
-            f"but could not extract a specific answer to your query. "
-            f"Please refer to the cited source documents for more details."
+    groq_api_key = os.environ.get("GROQ_API_KEY", "")
+    
+    system_prompt = AGENT_SYSTEM_PROMPTS.get(agent, AGENT_SYSTEM_PROMPTS["general"])
+    prompt = f"Context from documents:\n\n{context}\n\nUser Query: {query}"
+
+    if not groq_api_key:
+        return {
+            "answer": "⚠️ **Groq API Key Missing!**\n\nPlease set the `GROQ_API_KEY` environment variable in your `.env` or terminal to use the Groq free-tier AI.",
+            "agent": agent,
+            "citations": citations
+        }
+
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {groq_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.1-8b-instant",  # Updated to Groq's active Llama 3.1 model
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.2,
+                "stream": False
+            },
+            timeout=30,
+            verify=False
         )
-    else:
-        intro = f"Based on company {agent.upper() if agent != 'general' else ''} policy documents:\n\n"
-        answer = intro + "\n".join(f"• {s}" for s in top_sentences)
-        answer += f"\n\n*Please refer to the cited source documents for complete policy details.*"
+        response.raise_for_status()
+        answer = response.json()["choices"][0]["message"]["content"]
+        
+        if not answer:
+            answer = "Groq returned an empty response. Please try again."
+            
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            answer = "⚠️ **Invalid Groq API Key.** Please verify your key."
+        else:
+            answer = f"⚠️ **Groq API Error:** {response.text}"
+    except Exception as e:
+        answer = f"⚠️ **Error generating response with Groq:** {str(e)}"
 
     return {
         "answer": answer,

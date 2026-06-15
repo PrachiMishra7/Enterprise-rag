@@ -100,12 +100,12 @@ class HybridRetriever:
         self.bm25 = BM25()
         self._initialized = False
 
-    def _get_all_chunks(self):
-        from rag.document_processor import CHUNKS_DB
-        return CHUNKS_DB
+    def _get_all_chunks(self, db):
+        from rag.document_processor import DocumentProcessor
+        return DocumentProcessor().get_all_chunks(db)
 
-    def _build_index(self):
-        self.chunks = self._get_all_chunks()
+    def _build_index(self, db):
+        self.chunks = self._get_all_chunks(db)
         if self.chunks:
             self.bm25.fit([c["text"] for c in self.chunks])
         self._initialized = True
@@ -113,8 +113,8 @@ class HybridRetriever:
     def add_documents(self, new_chunks: List[dict], metadata: dict):
         self._initialized = False  # Force re-index
 
-    def retrieve(self, query: str, user_role: str, top_k: int = 5) -> List[dict]:
-        self._build_index()
+    def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
+        self._build_index(db)
 
         if not self.chunks:
             return []

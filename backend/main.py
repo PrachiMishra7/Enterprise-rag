@@ -1,11 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-from typing import Optional, List
+from sqlalchemy.orm import Session
 import uvicorn
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+from database import engine, get_db, SessionLocal
+from models.database import Base
 from auth.auth_handler import AuthHandler
 from rag.document_processor import DocumentProcessor
 from rag.retriever import HybridRetriever
@@ -15,6 +19,9 @@ from models.schemas import (
     LoginRequest, LoginResponse, QueryRequest, QueryResponse,
     DocumentUploadResponse, UserCreate
 )
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Enterprise RAG Assistant API",
@@ -39,6 +46,15 @@ agent_router = AgentRouter()
 security = HTTPBearer()
 
 
+@app.on_event("startup")
+def on_startup():
+    db = SessionLocal()
+    try:
+        auth_handler.seed_demo_users(db)
+        doc_processor.seed_demo_documents(db)
+    finally:
+        db.close()
+
 @app.get("/", include_in_schema=False)
 async def root():
     from fastapi.responses import RedirectResponse
@@ -56,16 +72,16 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 # ─── Auth Endpoints ───────────────────────────────────────────────────────────
 
 @app.post("/auth/register", response_model=dict)
-async def register(user: UserCreate):
-    result = auth_handler.register_user(user)
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    result = auth_handler.register_user(db, user)
     if not result:
         raise HTTPException(status_code=400, detail="User already exists")
     return {"message": "User registered successfully", "user_id": result}
 
 
 @app.post("/auth/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
-    user = auth_handler.authenticate_user(request.email, request.password)
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    user = auth_handler.authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = auth_handler.create_token(user)
@@ -85,7 +101,8 @@ async def upload_document(
     file: UploadFile = File(...),
     department: str = "general",
     access_level: str = "employee",
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     allowed_roles = ["hr_admin", "manager", "admin"]
     if current_user["role"] not in allowed_roles:
@@ -93,6 +110,7 @@ async def upload_document(
 
     content = await file.read()
     result = doc_processor.process_document(
+        db=db,
         content=content,
         filename=file.filename,
         department=department,
@@ -110,17 +128,18 @@ async def upload_document(
 
 
 @app.get("/documents/list")
-async def list_documents(current_user: dict = Depends(get_current_user)):
-    docs = doc_processor.list_documents(current_user["role"])
+async def list_documents(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    docs = doc_processor.list_documents(db, current_user["role"])
     return {"documents": docs}
 
 
 # ─── Query Endpoint ───────────────────────────────────────────────────────────
 
 @app.post("/query", response_model=QueryResponse)
-async def query(request: QueryRequest, current_user: dict = Depends(get_current_user)):
+async def query(request: QueryRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     # Retrieve relevant chunks (role-filtered)
     retrieved_chunks = retriever.retrieve(
+        db=db,
         query=request.query,
         user_role=current_user["role"],
         top_k=5

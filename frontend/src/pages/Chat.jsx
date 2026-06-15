@@ -6,7 +6,7 @@ export default function Chat({ queryInput, setQueryInput }) {
   const { user, token } = useAuth();
   const [messages, setMessages] = useState([{
     role: 'ai',
-    content: `Hello \${user?.name}! 👋 I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
+    content: `Hello ${user?.name}! 👋 I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
     agent: 'general',
     confidence: 0.9,
     hallucination: false,
@@ -45,7 +45,7 @@ export default function Chat({ queryInput, setQueryInput }) {
     } catch (e) {
       setMessages([...newMessages, {
         role: 'ai',
-        content: `⚠️ Unable to reach the backend (\${e.message}).`,
+        content: `⚠️ Unable to reach the backend (${e.message}).`,
         agent: 'general', confidence: 0, hallucination: false, citations: []
       }]);
     } finally {
@@ -64,22 +64,22 @@ export default function Chat({ queryInput, setQueryInput }) {
     <div className="chat-container">
       <div className="messages-area">
         {messages.map((m, i) => (
-          <div key={i} className={`message \${m.role}`}>
-            <div className={`avatar avatar-\${m.role}`}>
+          <div key={i} className={`message ${m.role}`}>
+            <div className={`avatar avatar-${m.role}`}>
               {m.role === 'user' ? '👤' : '🤖'}
             </div>
-            <div className={`bubble bubble-\${m.role}`}>
+            <div className={`bubble bubble-${m.role}`}>
               {m.content}
               {m.role === 'ai' && m.agent && m.agent !== 'general' && (
                 <div className="meta-row">
-                  <div className={`agent-tag agent-\${m.agent}`}>{m.agent} Agent</div>
+                  <div className={`agent-tag agent-${m.agent}`}>{m.agent} Agent</div>
                   {m.confidence !== undefined && (
                     <div className="confidence-bar">
                       <div className="conf-label">Confidence</div>
                       <div className="conf-track">
                         <div 
-                          className={`conf-fill \${m.confidence >= 0.7 ? 'conf-high' : m.confidence >= 0.45 ? 'conf-mid' : 'conf-low'}`} 
-                          style={{ width: `\${Math.round(m.confidence * 100)}%` }}
+                          className={`conf-fill ${m.confidence >= 0.7 ? 'conf-high' : m.confidence >= 0.45 ? 'conf-mid' : 'conf-low'}`} 
+                          style={{ width: `${Math.round(m.confidence * 100)}%` }}
                         ></div>
                       </div>
                       <div className="conf-pct">{Math.round(m.confidence * 100)}%</div>

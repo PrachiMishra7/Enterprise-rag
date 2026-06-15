@@ -249,6 +249,7 @@ h1, h2, h3, h4, h5, h6, .logo-title, .header-title, .agent-name, .doc-name, .sta
 .messages-area { flex: 1; overflow-y: auto; padding: 40px 32px; display: flex; flex-direction: column; gap: 32px; scroll-behavior: smooth; }
 
 .message { display: flex; gap: 20px; max-width: 900px; animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .message.user { flex-direction: row-reverse; margin-left: auto; }
 
 .avatar {
