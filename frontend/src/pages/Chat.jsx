@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu } from 'lucide-react';
 
 export default function Chat({ queryInput, setQueryInput }) {
   const { user, token } = useAuth();
+  const [targetAgent, setTargetAgent] = useState('auto');
   const [messages, setMessages] = useState([{
     role: 'ai',
     content: `Hello ${user?.name}! 👋 I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
@@ -34,7 +35,7 @@ export default function Chat({ queryInput, setQueryInput }) {
     setTyping(true);
 
     try {
-      const data = await apiCall('POST', '/query', { query }, false, token);
+      const data = await apiCall('POST', '/query', { query, target_agent: targetAgent }, false, token);
       setMessages([...newMessages, {
         role: 'ai',
         content: data.answer,
@@ -158,6 +159,23 @@ export default function Chat({ queryInput, setQueryInput }) {
             </button>
           ))}
         </div>
+        
+        <div className="flex items-center gap-2 mb-3">
+          <Cpu className="w-4 h-4 text-primary" />
+          <select 
+            className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer hover:bg-secondary/50 transition-colors"
+            value={targetAgent}
+            onChange={(e) => setTargetAgent(e.target.value)}
+            disabled={typing}
+          >
+            <option value="auto">🤖 Auto-Detect Agent</option>
+            <option value="hr">👥 HR Agent</option>
+            <option value="legal">⚖️ Legal Agent</option>
+            <option value="finance">💰 Finance Agent</option>
+            <option value="it">💻 IT Support Agent</option>
+          </select>
+        </div>
+
         <div className="flex gap-3 items-end relative">
           <textarea 
             className="flex-1 min-h-[52px] max-h-32 p-3.5 pr-12 bg-background border border-border rounded-lg text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow shadow-sm" 

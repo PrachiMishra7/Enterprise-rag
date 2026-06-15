@@ -26,6 +26,7 @@ class UserCreate(BaseModel):
 class QueryRequest(BaseModel):
     query: str
     department: Optional[str] = None
+    target_agent: Optional[str] = "auto"
 
 
 class Citation(BaseModel):

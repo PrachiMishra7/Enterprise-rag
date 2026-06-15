@@ -152,8 +152,11 @@ def generate_response(query: str, context: str, agent: str, chunks: List[dict]) 
 
 
 class AgentRouter:
-    def route_and_respond(self, query: str, chunks: List[dict], user_role: str) -> dict:
-        agent = detect_agent(query)
+    def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto") -> dict:
+        if target_agent and target_agent != "auto" and target_agent in AGENT_SYSTEM_PROMPTS:
+            agent = target_agent
+        else:
+            agent = detect_agent(query)
 
         # Further filter chunks by detected department if possible
         dept_chunks = [c for c in chunks if c.get("department") == agent]

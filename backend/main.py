@@ -2,6 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import datetime, timedelta
 import uvicorn
 import os
 from dotenv import load_dotenv
@@ -159,7 +161,8 @@ async def query(request: QueryRequest, current_user: dict = Depends(get_current_
     agent_response = agent_router.route_and_respond(
         query=request.query,
         chunks=retrieved_chunks,
-        user_role=current_user["role"]
+        user_role=current_user["role"],
+        target_agent=request.target_agent
     )
 
     # Hallucination detection
@@ -212,11 +215,27 @@ async def get_analytics(current_user: dict = Depends(get_current_user), db: Sess
     
     hallucination_rate = f"{(hallucination_count / query_count * 100):.1f}%" if query_count > 0 else "0%"
     
+    volume_history = []
+    today = datetime.utcnow().date()
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        day_str = day.strftime("%a")
+        
+        q_count = db.query(QueryLog).filter(func.date(QueryLog.created_at) == day).count()
+        d_count = db.query(Document).filter(func.date(Document.uploaded_at) == day).count()
+        
+        volume_history.append({
+            "name": day_str,
+            "queries": q_count,
+            "docs": d_count
+        })
+
     return {
         "doc_count": doc_count,
         "query_count": query_count,
         "hallucination_rate": hallucination_rate,
         "active_agents": 8,
+        "volume_history": volume_history,
         "department_usage": [
             {"name": "HR", "usage": hr_count},
             {"name": "IT", "usage": it_count},

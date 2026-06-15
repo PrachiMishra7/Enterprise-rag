@@ -55,7 +55,8 @@ export default function Overview({ navigateTo }) {
     query_count: 0,
     hallucination_rate: "0%",
     active_agents: 8,
-    department_usage: []
+    department_usage: [],
+    volume_history: []
   });
 
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function Overview({ navigateTo }) {
             <h3 className="text-sm font-bold text-[#8b92a5] uppercase tracking-wider mb-6">Interaction Volume (7 Days)</h3>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={stats.volume_history.length ? stats.volume_history : areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
                   <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
