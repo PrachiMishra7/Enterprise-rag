@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { ArrowRight, Activity, ShieldAlert, Database, Zap } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
+import { useAuth } from '../contexts/AuthContext';
+import { apiCall } from '../utils/api';
 
 const areaData = [
   { name: 'Mon', queries: 4000, docs: 2400 },
@@ -11,14 +14,6 @@ const areaData = [
   { name: 'Fri', queries: 1890, docs: 4800 },
   { name: 'Sat', queries: 2390, docs: 3800 },
   { name: 'Sun', queries: 3490, docs: 4300 },
-];
-
-const barData = [
-  { name: 'HR', usage: 400 },
-  { name: 'IT', usage: 300 },
-  { name: 'Legal', usage: 200 },
-  { name: 'Finance', usage: 278 },
-  { name: 'Sales', usage: 189 },
 ];
 
 function CircularProgress({ value, label, sublabel, color, trackColor }) {
@@ -54,6 +49,23 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
 }
 
 export default function Overview({ navigateTo }) {
+  const { token } = useAuth();
+  const [stats, setStats] = useState({
+    doc_count: 0,
+    query_count: 0,
+    hallucination_rate: "0%",
+    active_agents: 8,
+    department_usage: []
+  });
+
+  useEffect(() => {
+    if (token) {
+      apiCall('GET', '/analytics', null, false, token)
+        .then(data => setStats(data))
+        .catch(e => console.error("Failed to load analytics", e));
+    }
+  }, [token]);
+
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#0a0f1d] text-white">
       
@@ -102,10 +114,10 @@ export default function Overview({ navigateTo }) {
         {/* Top Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { label: "Queries Processed", value: "24,892", icon: Activity, color: "text-[#a855f7]", bg: "bg-[#a855f7]/10" },
-            { label: "Active Agents", value: "8", icon: Zap, color: "text-[#eab308]", bg: "bg-[#eab308]/10" },
-            { label: "Total Documents", value: "1,240", icon: Database, color: "text-[#06b6d4]", bg: "bg-[#06b6d4]/10" },
-            { label: "Hallucination Risk", value: "1.2%", icon: ShieldAlert, color: "text-[#10b981]", bg: "bg-[#10b981]/10" }
+            { label: "Queries Processed", value: stats.query_count.toLocaleString(), icon: Activity, color: "text-[#a855f7]", bg: "bg-[#a855f7]/10" },
+            { label: "Active Agents", value: stats.active_agents, icon: Zap, color: "text-[#eab308]", bg: "bg-[#eab308]/10" },
+            { label: "Total Documents", value: stats.doc_count.toLocaleString(), icon: Database, color: "text-[#06b6d4]", bg: "bg-[#06b6d4]/10" },
+            { label: "Hallucination Risk", value: stats.hallucination_rate, icon: ShieldAlert, color: "text-[#10b981]", bg: "bg-[#10b981]/10" }
           ].map((stat, i) => (
             <div key={i} className="p-6 bg-[#151c33]/60 backdrop-blur-xl border border-[#2d3748] rounded-2xl relative overflow-hidden group">
               <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 -mr-4 -mt-4 transition-opacity group-hover:opacity-40 ${stat.bg.replace('/10', '')}`}></div>
@@ -147,7 +159,7 @@ export default function Overview({ navigateTo }) {
               <h3 className="text-sm font-bold text-[#8b92a5] uppercase tracking-wider mb-4">Department Usage</h3>
               <div className="h-[140px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData}>
+                  <BarChart data={stats.department_usage.length ? stats.department_usage : [{name: 'Loading', usage: 0}]}>
                     <Tooltip 
                       cursor={{ fill: '#1e293b' }} 
                       contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px' }}
@@ -160,7 +172,7 @@ export default function Overview({ navigateTo }) {
 
             <div className="grid grid-cols-2 gap-4">
               <CircularProgress value={92} label="Data Coverage" sublabel="Index Freshness" color="#0ea5e9" trackColor="#0ea5e940" />
-              <CircularProgress value={85} label="Avg Accuracy" sublabel="Confidence Score" color="#a855f7" trackColor="#a855f740" />
+              <CircularProgress value={stats.hallucination_rate === '0%' ? 100 : 100 - parseFloat(stats.hallucination_rate)} label="Avg Accuracy" sublabel="Confidence Score" color="#a855f7" trackColor="#a855f740" />
             </div>
           </div>
 

@@ -47,3 +47,16 @@ class DocumentChunk(Base):
     chunk_index = Column(Integer, default=0)
 
     document = relationship("Document", back_populates="chunks")
+
+class QueryLog(Base):
+    __tablename__ = "query_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"))
+    query = Column(String, nullable=False)
+    agent = Column(String, default="general")
+    confidence_score = Column(Integer, default=0) # Storing as 0-100 integer for simplicity
+    hallucination_detected = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

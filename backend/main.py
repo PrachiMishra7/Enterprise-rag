@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from database import engine, get_db, SessionLocal
-from models.database import Base
+from models.database import Base, QueryLog, Document
 from auth.auth_handler import AuthHandler
 from rag.document_processor import DocumentProcessor
 from rag.retriever import HybridRetriever
@@ -176,6 +176,17 @@ async def query(request: QueryRequest, current_user: dict = Depends(get_current_
             + final_answer
         )
 
+    # Log query to database
+    query_log = QueryLog(
+        user_id=current_user["id"],
+        query=request.query,
+        agent=agent_response["agent"],
+        confidence_score=int(hallucination_result["confidence_score"] * 100),
+        hallucination_detected=hallucination_result["hallucination_detected"]
+    )
+    db.add(query_log)
+    db.commit()
+
     return QueryResponse(
         answer=final_answer,
         agent=agent_response["agent"],
@@ -184,6 +195,52 @@ async def query(request: QueryRequest, current_user: dict = Depends(get_current_
         hallucination_detected=hallucination_result["hallucination_detected"],
         sources=[c["source"] for c in retrieved_chunks]
     )
+
+
+@app.get("/analytics")
+async def get_analytics(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Basic analytics
+    doc_count = db.query(Document).count()
+    query_count = db.query(QueryLog).count()
+    hallucination_count = db.query(QueryLog).filter(QueryLog.hallucination_detected == True).count()
+    
+    # Department usage
+    hr_count = db.query(QueryLog).filter(QueryLog.agent == "hr").count()
+    it_count = db.query(QueryLog).filter(QueryLog.agent == "it").count()
+    legal_count = db.query(QueryLog).filter(QueryLog.agent == "legal").count()
+    finance_count = db.query(QueryLog).filter(QueryLog.agent == "finance").count()
+    
+    hallucination_rate = f"{(hallucination_count / query_count * 100):.1f}%" if query_count > 0 else "0%"
+    
+    return {
+        "doc_count": doc_count,
+        "query_count": query_count,
+        "hallucination_rate": hallucination_rate,
+        "active_agents": 8,
+        "department_usage": [
+            {"name": "HR", "usage": hr_count},
+            {"name": "IT", "usage": it_count},
+            {"name": "Legal", "usage": legal_count},
+            {"name": "Finance", "usage": finance_count},
+        ]
+    }
+
+
+@app.get("/audit")
+async def get_audit_logs(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user["role"] not in ["admin", "hr_admin", "legal_admin", "finance_admin", "it_admin"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+        
+    logs = db.query(QueryLog).order_by(QueryLog.created_at.desc()).limit(50).all()
+    return {"logs": [{
+        "id": l.id,
+        "user_id": l.user_id,
+        "query": l.query,
+        "agent": l.agent,
+        "confidence": l.confidence_score,
+        "hallucinated": l.hallucination_detected,
+        "timestamp": l.created_at.isoformat()
+    } for l in logs]}
 
 
 @app.get("/health")

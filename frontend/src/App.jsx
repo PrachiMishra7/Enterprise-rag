@@ -8,6 +8,7 @@ import Chat from './pages/Chat';
 import Documents from './pages/Documents';
 import Upload from './pages/Upload';
 import Agents from './pages/Agents';
+import AuditLogs from './pages/AuditLogs';
 
 function App() {
   const { user, token } = useAuth();
@@ -66,7 +67,7 @@ function App() {
       case 'prompts': return renderPlaceholder('Prompt Library', 'Create, save, and manage enterprise-grade system prompts and templates for the AI agents.');
       case 'connectors': return renderPlaceholder('Data Connectors', 'Connect external data sources like Google Drive, Confluence, Jira, and Slack to the vector index.');
       case 'users': return renderPlaceholder('User Management', 'Manage enterprise users, departments, and Role-Based Access Control (RBAC) permissions.');
-      case 'audit': return renderPlaceholder('Audit & Security Logs', 'Track detailed logs of all AI interactions, document retrievals, and flagged hallucination events.');
+      case 'audit': return <AuditLogs />;
       case 'settings': return renderPlaceholder('System Settings', 'Configure LLM endpoints, embedding models, and global security policies.');
       default: return <Overview navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
     }
