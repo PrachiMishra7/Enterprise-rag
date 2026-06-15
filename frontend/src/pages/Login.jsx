@@ -4,8 +4,8 @@ import { apiCall } from '../utils/api';
 
 const DEMO_ACCOUNTS = [
   { email: 'admin@company.com', password: 'AdminPass!2024', label: 'Admin (All Access)' },
-  { email: 'hr.manager@company.com', password: 'EnterprisePass!2024', label: 'HR Manager' },
-  { email: 'john.employee@company.com', password: 'EnterprisePass!2024', label: 'Employee' },
+  { email: 'carol@company.com', password: 'EnterprisePass!2024', label: 'HR Admin' },
+  { email: 'alice@company.com', password: 'EnterprisePass!2024', label: 'Employee' },
 ];
 
 export default function Login() {
@@ -22,8 +22,8 @@ export default function Login() {
     setError('');
     
     try {
-      const data = await apiCall('POST', '/login', { email, password });
-      login(data.user, data.access_token);
+      const data = await apiCall('POST', '/auth/login', { email, password });
+      login({ id: data.user_id, role: data.role, name: data.name, email }, data.access_token);
     } catch (err) {
       setError(err.message);
     } finally {

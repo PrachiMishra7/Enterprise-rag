@@ -194,3 +194,11 @@ GET    /docs                Swagger UI
 | Response Latency | API response time logging |
 | Precision / Recall | Chunk relevance evaluation |
 | User Satisfaction | Survey-based scoring |
+
+
+cd backend
+pip install -r requirements.txt
+python main.py
+
+cd frontend
+python -m http.server 3000
