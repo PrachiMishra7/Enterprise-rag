@@ -40,14 +40,35 @@ function App() {
     }} />;
   }
 
+  const renderPlaceholder = (title, desc) => (
+    <div className="flex-1 flex flex-col items-center justify-center bg-[#0a0f1d] p-8 text-center h-full">
+      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-6 border border-primary/20">
+        <div className="w-10 h-10 bg-primary/20 rounded-xl animate-pulse"></div>
+      </div>
+      <h2 className="text-3xl font-extrabold text-white mb-2">{title}</h2>
+      <p className="text-slate-400 max-w-md">{desc}</p>
+      <button 
+        onClick={() => setPage('overview')}
+        className="mt-8 px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-lg border border-white/10 transition-colors"
+      >
+        Return to Dashboard
+      </button>
+    </div>
+  );
+
   const renderContent = () => {
     switch (page) {
-      case 'overview': return <Overview documents={documents} navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
+      case 'overview': return <Overview navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
       case 'chat': return <Chat queryInput={queryInput} setQueryInput={setQueryInput} />;
       case 'documents': return <Documents documents={documents} loadDocuments={setDocuments} />;
       case 'upload': return <Upload showToast={showToast} loadDocuments={setDocuments} />;
       case 'agents': return <Agents navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
-      default: return <Overview documents={documents} navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
+      case 'prompts': return renderPlaceholder('Prompt Library', 'Create, save, and manage enterprise-grade system prompts and templates for the AI agents.');
+      case 'connectors': return renderPlaceholder('Data Connectors', 'Connect external data sources like Google Drive, Confluence, Jira, and Slack to the vector index.');
+      case 'users': return renderPlaceholder('User Management', 'Manage enterprise users, departments, and Role-Based Access Control (RBAC) permissions.');
+      case 'audit': return renderPlaceholder('Audit & Security Logs', 'Track detailed logs of all AI interactions, document retrievals, and flagged hallucination events.');
+      case 'settings': return renderPlaceholder('System Settings', 'Configure LLM endpoints, embedding models, and global security policies.');
+      default: return <Overview navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
     }
   };
 
