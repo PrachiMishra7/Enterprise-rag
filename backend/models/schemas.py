@@ -50,3 +50,15 @@ class DocumentUploadResponse(BaseModel):
     chunks_created: int
     department: str
     message: str
+
+
+class PromptUpdate(BaseModel):
+    system_prompt: str
+
+
+class PromptResponse(BaseModel):
+    id: str
+    name: str
+    system_prompt: str
+    updated_at: str
+

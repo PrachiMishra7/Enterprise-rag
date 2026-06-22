@@ -60,3 +60,12 @@ class QueryLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
+
+class AgentPrompt(Base):
+    __tablename__ = "agent_prompts"
+
+    id = Column(String, primary_key=True) # e.g. 'hr', 'legal', 'finance', 'it', 'general'
+    name = Column(String, nullable=False)
+    system_prompt = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

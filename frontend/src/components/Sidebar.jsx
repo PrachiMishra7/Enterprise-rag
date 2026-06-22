@@ -44,7 +44,7 @@ export default function Sidebar({ currentPage, setPage }) {
   const sectionsToRender = [...SECTIONS, ADMIN_SECTION];
 
   return (
-    <div className="w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto transition-transform shadow-2xl relative">
+    <div className="w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto no-scrollbar transition-transform shadow-2xl relative">
       
       {/* Background Glow */}
       <div className="absolute top-0 left-0 w-full h-32 bg-primary/10 blur-[80px] pointer-events-none"></div>

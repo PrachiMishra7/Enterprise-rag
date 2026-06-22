@@ -9,6 +9,11 @@ import Documents from './pages/Documents';
 import Upload from './pages/Upload';
 import Agents from './pages/Agents';
 import AuditLogs from './pages/AuditLogs';
+import Prompts from './pages/Prompts';
+import DataConnectors from './pages/DataConnectors';
+import UserManagement from './pages/UserManagement';
+import Settings from './pages/Settings';
+
 
 function App() {
   const { user, token } = useAuth();
@@ -64,11 +69,11 @@ function App() {
       case 'documents': return <Documents documents={documents} loadDocuments={setDocuments} />;
       case 'upload': return <Upload showToast={showToast} loadDocuments={setDocuments} />;
       case 'agents': return <Agents navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
-      case 'prompts': return renderPlaceholder('Prompt Library', 'Create, save, and manage enterprise-grade system prompts and templates for the AI agents.');
-      case 'connectors': return renderPlaceholder('Data Connectors', 'Connect external data sources like Google Drive, Confluence, Jira, and Slack to the vector index.');
-      case 'users': return renderPlaceholder('User Management', 'Manage enterprise users, departments, and Role-Based Access Control (RBAC) permissions.');
+      case 'prompts': return <Prompts />;
+      case 'connectors': return <DataConnectors />;
+      case 'users': return <UserManagement />;
       case 'audit': return <AuditLogs />;
-      case 'settings': return renderPlaceholder('System Settings', 'Configure LLM endpoints, embedding models, and global security policies.');
+      case 'settings': return <Settings />;
       default: return <Overview navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
     }
   };

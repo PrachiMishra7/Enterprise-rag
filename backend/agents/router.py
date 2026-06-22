@@ -21,9 +21,21 @@ class AgentState(TypedDict):
     answer: str
     citations: List[dict]
 
-def route_query(state: AgentState) -> AgentState:
+def get_allowed_agents(db=None) -> List[str]:
+    if db is not None:
+        try:
+            from models.database import AgentPrompt
+            prompts = db.query(AgentPrompt).all()
+            if prompts:
+                return [p.id for p in prompts]
+        except Exception as e:
+            print(f"Error querying AgentPrompt keys: {e}")
+    return list(AGENT_SYSTEM_PROMPTS.keys())
+
+def route_query(state: AgentState, db=None) -> AgentState:
     """Determine which agent should handle the query."""
-    if state.get("target_agent") and state["target_agent"] != "auto" and state["target_agent"] in AGENT_SYSTEM_PROMPTS:
+    allowed_agents = get_allowed_agents(db)
+    if state.get("target_agent") and state["target_agent"] != "auto" and state["target_agent"] in allowed_agents:
         state["agent"] = state["target_agent"]
         return state
 
@@ -33,7 +45,7 @@ def route_query(state: AgentState) -> AgentState:
     
     if groq_api_key:
         prompt = f"""Classify the following enterprise query into exactly one department.
-Departments: hr, finance, legal, it, general
+Departments: {', '.join(allowed_agents)}
 Query: {query}
 Return only the department name in lowercase, nothing else."""
 
@@ -53,7 +65,7 @@ Return only the department name in lowercase, nothing else."""
             if response.status_code == 200:
                 agent = response.json()["choices"][0]["message"]["content"].strip().lower()
                 agent = ''.join(c for c in agent if c.isalpha())
-                if agent in AGENT_SYSTEM_PROMPTS:
+                if agent in allowed_agents:
                     state["agent"] = agent
         except Exception:
             pass
@@ -89,14 +101,28 @@ def format_context(state: AgentState) -> AgentState:
     
     return state
 
-def generate_answer(state: AgentState) -> AgentState:
+def generate_answer(state: AgentState, db=None) -> AgentState:
     """Generate the response using the LLM."""
     query = state["query"]
     context = state["context"]
     agent = state["agent"]
     
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
-    system_prompt = AGENT_SYSTEM_PROMPTS.get(agent, AGENT_SYSTEM_PROMPTS["general"])
+    
+    # Retrieve system prompt from db
+    system_prompt = None
+    if db is not None:
+        try:
+            from models.database import AgentPrompt
+            prompt_obj = db.query(AgentPrompt).filter(AgentPrompt.id == agent).first()
+            if prompt_obj:
+                system_prompt = prompt_obj.system_prompt
+        except Exception as e:
+            print(f"Error retrieving agent prompt from database: {e}")
+            
+    if not system_prompt:
+        system_prompt = AGENT_SYSTEM_PROMPTS.get(agent, AGENT_SYSTEM_PROMPTS["general"])
+        
     prompt = f"Context from documents:\n\n{context}\n\nUser Query: {query}"
 
     if not groq_api_key:
@@ -140,7 +166,7 @@ def generate_answer(state: AgentState) -> AgentState:
     return state
 
 class AgentRouter:
-    def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto") -> dict:
+    def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto", db=None) -> dict:
         state = {
             "query": query,
             "chunks": chunks,
@@ -153,12 +179,13 @@ class AgentRouter:
         }
         
         # Execute the agent workflow sequentially
-        state = route_query(state)
+        state = route_query(state, db=db)
         state = format_context(state)
-        state = generate_answer(state)
+        state = generate_answer(state, db=db)
         
         return {
             "answer": state["answer"],
             "agent": state["agent"],
             "citations": state["citations"]
         }
+
