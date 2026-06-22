@@ -41,8 +41,7 @@ export default function Sidebar({ currentPage, setPage }) {
     ]
   };
 
-  const isAdmin = ['admin','hr_admin','legal_admin','finance_admin','it_admin'].includes(user?.role);
-  const sectionsToRender = isAdmin ? [...SECTIONS, ADMIN_SECTION] : SECTIONS;
+  const sectionsToRender = [...SECTIONS, ADMIN_SECTION];
 
   return (
     <div className="w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto transition-transform shadow-2xl relative">
