@@ -1,31 +1,7 @@
-import re
 import os
 import requests
-from typing import List, Dict, Any
-
-
-AGENT_KEYWORDS = {
-    "hr": [
-        "leave", "vacation", "holiday", "sick", "maternity", "paternity", "attendance",
-        "salary", "payroll", "onboarding", "resign", "resignation", "hr", "employee policy",
-        "conduct", "dress code", "performance review", "appraisal", "benefits", "pf", "esi"
-    ],
-    "legal": [
-        "contract", "nda", "non-disclosure", "agreement", "legal", "compliance",
-        "lawsuit", "liability", "ip", "intellectual property", "confidential", "clause",
-        "terms", "termination clause", "gdpr", "data protection", "privacy law"
-    ],
-    "finance": [
-        "expense", "reimbursement", "invoice", "budget", "allowance", "claim",
-        "travel cost", "mobile allowance", "finance", "payment", "receipt", "reimburse",
-        "deduction", "tax", "gst", "tds", "perks", "cost", "bill"
-    ],
-    "it": [
-        "software", "hardware", "password", "ticket", "helpdesk", "support",
-        "laptop", "network", "vpn", "install", "access", "account", "security",
-        "email setup", "system", "reset", "it policy", "device", "equipment"
-    ]
-}
+from typing import List, Dict, Any, TypedDict, Literal
+from langgraph.graph import StateGraph, START, END
 
 AGENT_SYSTEM_PROMPTS = {
     "hr": "You are an HR specialist assistant. Answer questions about leave policies, employee conduct, payroll, attendance, onboarding, and HR procedures based strictly on the provided company documents.",
@@ -35,81 +11,97 @@ AGENT_SYSTEM_PROMPTS = {
     "general": "You are a general enterprise assistant. Answer questions based strictly on the provided company documents."
 }
 
+class AgentState(TypedDict):
+    query: str
+    chunks: List[dict]
+    user_role: str
+    target_agent: str
+    agent: str
+    context: str
+    answer: str
+    citations: List[dict]
 
-def detect_agent(query: str) -> str:
-    """Route query to the best specialized agent using LLM Intent Classification."""
+def route_query(state: AgentState) -> AgentState:
+    """Determine which agent should handle the query."""
+    if state.get("target_agent") and state["target_agent"] != "auto" and state["target_agent"] in AGENT_SYSTEM_PROMPTS:
+        state["agent"] = state["target_agent"]
+        return state
+
+    query = state["query"]
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
-    if not groq_api_key:
-        return "general"  # Fallback if no key
-
-    prompt = f"""Classify the following enterprise query into exactly one department.
-Departments:
-hr
-finance
-legal
-it
-general
-
+    state["agent"] = "general"
+    
+    if groq_api_key:
+        prompt = f"""Classify the following enterprise query into exactly one department.
+Departments: hr, finance, legal, it, general
 Query: {query}
 Return only the department name in lowercase, nothing else."""
 
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.0,
-                "max_tokens": 10
-            },
-            timeout=10,
-            verify=False
-        )
-        if response.status_code == 200:
-            agent = response.json()["choices"][0]["message"]["content"].strip().lower()
-            # Clean up the response in case it outputs extra punctuation
-            agent = ''.join(c for c in agent if c.isalpha())
-            if agent in AGENT_SYSTEM_PROMPTS:
-                return agent
-    except Exception:
-        pass
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.0,
+                    "max_tokens": 10
+                },
+                timeout=10,
+                verify=False
+            )
+            if response.status_code == 200:
+                agent = response.json()["choices"][0]["message"]["content"].strip().lower()
+                agent = ''.join(c for c in agent if c.isalpha())
+                if agent in AGENT_SYSTEM_PROMPTS:
+                    state["agent"] = agent
+        except Exception:
+            pass
+
+    return state
+
+def format_context(state: AgentState) -> AgentState:
+    """Format the retrieved chunks into a context string."""
+    agent = state["agent"]
+    chunks = state["chunks"]
     
-    return "general"
-
-
-def format_context(chunks: List[dict]) -> str:
+    # Filter by department if possible
+    dept_chunks = [c for c in chunks if c.get("department") == agent]
+    relevant_chunks = dept_chunks if dept_chunks else chunks
+    
     parts = []
-    for i, chunk in enumerate(chunks, 1):
+    for i, chunk in enumerate(relevant_chunks, 1):
         parts.append(f"[Source {i}: {chunk['source']}]\n{chunk['text']}")
-    return "\n\n---\n\n".join(parts)
-
-
-def generate_response(query: str, context: str, agent: str, chunks: List[dict]) -> dict:
-    """
-    Generate a response using local Ollama API.
-    """
+        
+    state["context"] = "\n\n---\n\n".join(parts)
+    state["chunks"] = relevant_chunks # update to filtered
+    
     # Build citations
     citations = []
-    for i, chunk in enumerate(chunks[:3]):
+    for i, chunk in enumerate(relevant_chunks[:3]):
         snippet = chunk["text"][:200].strip()
         citations.append({
             "text": snippet + ("..." if len(chunk["text"]) > 200 else ""),
             "source": chunk["source"],
             "page": chunk.get("chunk_index", 0) + 1
         })
-
-    groq_api_key = os.environ.get("GROQ_API_KEY", "")
+    state["citations"] = citations
     
+    return state
+
+def generate_answer(state: AgentState) -> AgentState:
+    """Generate the response using the LLM."""
+    query = state["query"]
+    context = state["context"]
+    agent = state["agent"]
+    
+    groq_api_key = os.environ.get("GROQ_API_KEY", "")
     system_prompt = AGENT_SYSTEM_PROMPTS.get(agent, AGENT_SYSTEM_PROMPTS["general"])
     prompt = f"Context from documents:\n\n{context}\n\nUser Query: {query}"
 
     if not groq_api_key:
-        return {
-            "answer": "⚠️ **Groq API Key Missing!**\n\nPlease set the `GROQ_API_KEY` environment variable in your `.env` or terminal to use the Groq free-tier AI.",
-            "agent": agent,
-            "citations": citations
-        }
+        state["answer"] = "⚠️ **Groq API Key Missing!**\n\nPlease set the `GROQ_API_KEY` environment variable in your `.env` or terminal to use the Groq free-tier AI."
+        return state
 
     try:
         response = requests.post(
@@ -119,7 +111,7 @@ def generate_response(query: str, context: str, agent: str, chunks: List[dict]) 
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.1-8b-instant",  # Updated to Groq's active Llama 3.1 model
+                "model": "llama-3.1-8b-instant",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -144,24 +136,29 @@ def generate_response(query: str, context: str, agent: str, chunks: List[dict]) 
     except Exception as e:
         answer = f"⚠️ **Error generating response with Groq:** {str(e)}"
 
-    return {
-        "answer": answer,
-        "agent": agent,
-        "citations": citations
-    }
-
+    state["answer"] = answer
+    return state
 
 class AgentRouter:
     def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto") -> dict:
-        if target_agent and target_agent != "auto" and target_agent in AGENT_SYSTEM_PROMPTS:
-            agent = target_agent
-        else:
-            agent = detect_agent(query)
-
-        # Further filter chunks by detected department if possible
-        dept_chunks = [c for c in chunks if c.get("department") == agent]
-        relevant_chunks = dept_chunks if dept_chunks else chunks
-
-        context = format_context(relevant_chunks)
-        result = generate_response(query, context, agent, relevant_chunks)
-        return result
+        state = {
+            "query": query,
+            "chunks": chunks,
+            "user_role": user_role,
+            "target_agent": target_agent,
+            "agent": "general",
+            "context": "",
+            "answer": "",
+            "citations": []
+        }
+        
+        # Execute the agent workflow sequentially
+        state = route_query(state)
+        state = format_context(state)
+        state = generate_answer(state)
+        
+        return {
+            "answer": state["answer"],
+            "agent": state["agent"],
+            "citations": state["citations"]
+        }

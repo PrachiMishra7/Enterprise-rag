@@ -1,11 +1,12 @@
 import re
+import os
+import requests
 from typing import List, Dict, Any
-
 
 class HallucinationDetector:
     """
     Verifies if a generated response is grounded in retrieved context.
-    Uses overlap, coverage, and specificity signals to compute a confidence score.
+    Uses LLM as a judge alongside overlap and coverage signals to compute confidence.
     """
 
     def __init__(self, confidence_threshold: float = 0.45):
@@ -23,29 +24,44 @@ class HallucinationDetector:
             return {
                 "confidence_score": 0.0,
                 "hallucination_detected": True,
-                "reason": "No context retrieved — response may be fabricated"
+                "reason": "No context retrieved — response may be fabricated",
+                "overlap_score": 0.0,
+                "claim_score": 0.0,
+                "coverage_score": 0.0
             }
 
         context_text = " ".join(c["text"] for c in context_chunks).lower()
         response_lower = response.lower()
 
-        # Signal 1: Word overlap between response and context
+        # Signal 1: Word overlap
         overlap_score = self._compute_overlap(response_lower, context_text)
 
-        # Signal 2: Specific claims in response — check if grounded
+        # Signal 2: Specific claims
         claim_score = self._check_specific_claims(response, context_text)
 
-        # Signal 3: Context coverage (how much of response content is found in context)
+        # Signal 3: Context coverage
         coverage_score = self._compute_coverage(response_lower, context_text)
 
-        # Weighted confidence
-        confidence = (
-            0.40 * overlap_score +
-            0.35 * claim_score +
-            0.25 * coverage_score
-        )
-        confidence = round(min(1.0, max(0.0, confidence)), 3)
+        # Signal 4: LLM Judge
+        llm_score = self._llm_judge(query, response, context_text)
 
+        # Weighted confidence incorporating LLM if successful
+        if llm_score is not None:
+            confidence = (
+                0.20 * overlap_score +
+                0.20 * claim_score +
+                0.20 * coverage_score +
+                0.40 * llm_score
+            )
+        else:
+            # Fallback to local scoring if LLM judge fails
+            confidence = (
+                0.40 * overlap_score +
+                0.35 * claim_score +
+                0.25 * coverage_score
+            )
+            
+        confidence = round(min(1.0, max(0.0, confidence)), 3)
         hallucination_detected = confidence < self.confidence_threshold
 
         return {
@@ -56,6 +72,49 @@ class HallucinationDetector:
             "coverage_score": round(coverage_score, 3),
             "reason": self._generate_reason(confidence, hallucination_detected)
         }
+
+    def _llm_judge(self, query: str, response: str, context: str) -> float | None:
+        """Uses an LLM to evaluate if the response is supported by the context."""
+        groq_api_key = os.environ.get("GROQ_API_KEY", "")
+        if not groq_api_key:
+            return None
+
+        prompt = f"""You are an objective evaluator fact-checking an AI assistant's response against retrieved documents.
+Context from documents:
+{context[:2000]}  # Trim to avoid exceeding limits
+
+User Query: {query}
+AI Response: {response}
+
+Analyze if the AI Response is FULLY SUPPORTED by the Context.
+Return ONLY a floating point number between 0.0 and 1.0 representing your confidence that the response is factually grounded in the context.
+0.0 = completely hallucinated or contradicted
+0.5 = partially supported
+1.0 = fully supported and factual
+Do not output anything else but the number.
+"""
+        try:
+            res = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.0,
+                    "max_tokens": 5
+                },
+                timeout=5,
+                verify=False
+            )
+            if res.status_code == 200:
+                score_str = res.json()["choices"][0]["message"]["content"].strip()
+                match = re.search(r"0\.\d+|1\.0", score_str)
+                if match:
+                    return float(match.group(0))
+        except Exception:
+            pass
+            
+        return None
 
     def _tokenize(self, text: str) -> set:
         stopwords = {"the", "a", "an", "is", "are", "was", "were", "be", "been",

@@ -30,6 +30,7 @@ share/python-wheels/
 # Database
 enterprise_rag.db
 *.sqlite3
+chroma_db/
 
 # IDE
 .vscode/

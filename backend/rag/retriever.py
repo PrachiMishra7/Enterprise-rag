@@ -1,10 +1,8 @@
-import math
 import os
-import faiss
-import numpy as np
 from typing import List, Dict, Any
-from sentence_transformers import SentenceTransformer
-from rank_bm25 import BM25Okapi
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_core.documents import Document
 
 # Access level hierarchy
 ROLE_ACCESS_MAP = {
@@ -18,16 +16,12 @@ ROLE_ACCESS_MAP = {
 }
 
 class HybridRetriever:
-    """Enterprise-grade Hybrid RAG using FAISS (Dense) and BM25 (Sparse)."""
+    """Enterprise-grade RAG Retriever using LangChain and ChromaDB."""
 
-    def __init__(self, model_name: str = 'all-MiniLM-L6-v2'):
-        self.model = SentenceTransformer(model_name)
-        self.dimension = self.model.get_sentence_embedding_dimension()
-        
-        self.chunks: List[dict] = []
-        self.faiss_index = None
-        self.bm25_index = None
-        
+    def __init__(self, model_name: str = 'all-MiniLM-L6-v2', persist_directory: str = "./chroma_db"):
+        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
+        self.persist_directory = persist_directory
+        self.vectorstore = None
         self._initialized = False
 
     def _get_all_chunks(self, db):
@@ -35,72 +29,99 @@ class HybridRetriever:
         return DocumentProcessor().get_all_chunks(db)
 
     def _build_index(self, db):
-        self.chunks = self._get_all_chunks(db)
-        if not self.chunks:
+        chunks = self._get_all_chunks(db)
+        if not chunks:
             self._initialized = True
             return
 
-        texts = [c["text"] for c in self.chunks]
-        
-        # Build BM25 Sparse Index
-        tokenized_corpus = [doc.lower().split() for doc in texts]
-        self.bm25_index = BM25Okapi(tokenized_corpus)
-        
-        # Build FAISS Dense Index
-        embeddings = self.model.encode(texts, convert_to_numpy=True)
-        # Normalize embeddings for cosine similarity using inner product
-        faiss.normalize_L2(embeddings)
-        self.faiss_index = faiss.IndexFlatIP(self.dimension)
-        self.faiss_index.add(embeddings)
-        
+        documents = []
+        for c in chunks:
+            doc = Document(
+                page_content=c["text"],
+                metadata={
+                    "id": c["id"],
+                    "document_id": c["document_id"],
+                    "source": c["source"],
+                    "department": c["department"],
+                    "access_level": c["access_level"],
+                    "chunk_index": c["chunk_index"]
+                }
+            )
+            documents.append(doc)
+            
+        self.vectorstore = Chroma.from_documents(
+            documents=documents,
+            embedding=self.embeddings,
+            persist_directory=self.persist_directory
+        )
         self._initialized = True
 
     def add_documents(self, new_chunks: List[dict], metadata: dict):
-        self._initialized = False  # Force re-index on next query
+        if not self.vectorstore:
+            # We don't have a vector store yet, just mark as not initialized
+            # to rebuild the next time retrieve is called.
+            self._initialized = False
+            return
+            
+        documents = []
+        for c in new_chunks:
+            # Check if this is a dictionary from the DB or a raw dict
+            if "id" in c:
+                doc = Document(
+                    page_content=c["text"],
+                    metadata={
+                        "id": c["id"],
+                        "document_id": c["document_id"],
+                        "source": c["source"],
+                        "department": c["department"],
+                        "access_level": c["access_level"],
+                        "chunk_index": c["chunk_index"]
+                    }
+                )
+            else:
+                 doc = Document(
+                    page_content=c["text"],
+                    metadata={
+                        "source": c.get("source", ""),
+                        "department": metadata.get("department", "general"),
+                        "access_level": metadata.get("access_level", "employee"),
+                        "chunk_index": c.get("chunk_index", 0)
+                    }
+                )               
+            documents.append(doc)
+            
+        self.vectorstore.add_documents(documents)
 
     def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
         if not self._initialized:
             self._build_index(db)
 
-        if not self.chunks:
+        if not self.vectorstore:
             return []
 
-        # 1. Sparse Search (BM25)
-        tokenized_query = query.lower().split()
-        bm25_scores = self.bm25_index.get_scores(tokenized_query)
-        
-        # 2. Dense Search (FAISS)
-        query_embedding = self.model.encode([query], convert_to_numpy=True)
-        faiss.normalize_L2(query_embedding)
-        dense_scores, _ = self.faiss_index.search(query_embedding, len(self.chunks))
-        
-        # Map dense scores back to original indices since FAISS sorts the output
-        # Wait, faiss search returns sorted by distance, but we need raw scores for each chunk.
-        # Actually, `dense_scores` contains distances, let's just do a manual dot product for simplicity if k is small,
-        # or map them properly. FAISS search returns (distances, indices).
-        dense_scores_raw = np.zeros(len(self.chunks))
-        distances, indices = self.faiss_index.search(query_embedding, len(self.chunks))
-        for i, idx in enumerate(indices[0]):
-            dense_scores_raw[idx] = distances[0][i]
-
-        results = []
         allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
-
-        for i, chunk in enumerate(self.chunks):
-            if chunk["access_level"] not in allowed_access:
-                continue
-
-            # Normalize scores roughly
-            b_score = bm25_scores[i] / (max(bm25_scores) + 1e-6)
-            d_score = dense_scores_raw[i]  # already between -1 and 1
-
-            # Combine (50% Dense, 50% Sparse)
-            hybrid_score = (0.5 * b_score) + (0.5 * d_score)
-            
-            results.append({**chunk, "score": hybrid_score})
-
-        # Sort and return top_k
-        results.sort(key=lambda x: x["score"], reverse=True)
-        top = results[:top_k]
-
-        return [r for r in top if r["score"] > 0.1]
+        
+        # LangChain Chroma doesn't natively support "IN" queries cleanly with basic filtering 
+        # for multiple possible access levels in the open-source version, so we retrieve more
+        # and post-filter, or build a complex filter. Post-filtering is safer for now.
+        
+        results = self.vectorstore.similarity_search_with_relevance_scores(query, k=top_k * 3)
+        
+        filtered_results = []
+        for doc, score in results:
+            if doc.metadata.get("access_level") in allowed_access:
+                filtered_results.append({
+                    "id": doc.metadata.get("id"),
+                    "document_id": doc.metadata.get("document_id"),
+                    "source": doc.metadata.get("source"),
+                    "department": doc.metadata.get("department"),
+                    "access_level": doc.metadata.get("access_level"),
+                    "text": doc.page_content,
+                    "chunk_index": doc.metadata.get("chunk_index"),
+                    "score": score
+                })
+                
+                if len(filtered_results) >= top_k:
+                    break
+                    
+        return filtered_results
