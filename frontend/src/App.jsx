@@ -84,7 +84,7 @@ function App() {
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setSidebarOpen(false)}
       ></div>
-      <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} />
+      <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} sidebarOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-background">
         <Header page={page} setSidebarOpen={setSidebarOpen} />
         {renderContent()}

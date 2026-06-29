@@ -1,10 +1,11 @@
 import { useAuth } from '../contexts/AuthContext';
+import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, MessageSquare, Folder, Bot, Upload, LogOut,
   TerminalSquare, Plug, Users, ShieldAlert, Settings
 } from 'lucide-react';
 
-export default function Sidebar({ currentPage, setPage }) {
+export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
   const { user, logout } = useAuth();
   
   const SECTIONS = [
@@ -44,7 +45,7 @@ export default function Sidebar({ currentPage, setPage }) {
   const sectionsToRender = [...SECTIONS, ADMIN_SECTION];
 
   return (
-    <div className="w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto no-scrollbar transition-transform shadow-2xl relative">
+    <div className={`fixed inset-y-0 left-0 md:relative w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto no-scrollbar transition-transform duration-300 ease-in-out shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       
       {/* Background Glow */}
       <div className="absolute top-0 left-0 w-full h-32 bg-primary/10 blur-[80px] pointer-events-none"></div>
@@ -66,11 +67,16 @@ export default function Sidebar({ currentPage, setPage }) {
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-1">
               {section.title}
             </div>
-            {section.items.map(item => {
+            {section.items.map((item, i) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
               return (
-                <div 
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 + i * 0.05 }}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
                   key={item.id}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all group relative overflow-hidden ${
                     isActive 
@@ -80,11 +86,11 @@ export default function Sidebar({ currentPage, setPage }) {
                   onClick={() => setPage(item.id)}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-md shadow-[0_0_10px_#3b82f6]"></div>
+                    <motion.div layoutId="activeTab" className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-md shadow-[0_0_10px_#3b82f6]"></motion.div>
                   )}
                   <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary/70'}`} />
                   <div>{item.label}</div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

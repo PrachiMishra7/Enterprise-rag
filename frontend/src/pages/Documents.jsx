@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Shield, HardDrive, Inbox, Search, Filter, 
-  Layers, FolderOpen, AlertCircle, RefreshCw, Database
+  Layers, FolderOpen, AlertCircle, RefreshCw, Database, 
+  Sparkles, X, FileEdit, ClipboardCheck, Copy
 } from 'lucide-react';
 
 const containerVariants = {
@@ -26,6 +27,12 @@ export default function Documents({ documents = [], loadDocuments }) {
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedAccess, setSelectedAccess] = useState('All');
+
+  // Summarization states
+  const [summarizingDoc, setSummarizingDoc] = useState(null);
+  const [summaryText, setSummaryText] = useState('');
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchDocs = async () => {
     setLoading(true);
@@ -49,6 +56,28 @@ export default function Documents({ documents = [], loadDocuments }) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleSummarize = async (doc) => {
+    setSummarizingDoc(doc);
+    setLoadingSummary(true);
+    setSummaryText('');
+    setCopied(false);
+    try {
+      const response = await apiCall('POST', `/documents/${doc.id}/summarize`, null, false, token);
+      setSummaryText(response.summary || 'No summary could be generated.');
+    } catch (e) {
+      console.error('Failed to summarize document:', e);
+      setSummaryText(`Failed to generate summary: ${e.message || 'Unknown backend error.'}`);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  const copySummary = () => {
+    navigator.clipboard.writeText(summaryText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Get unique departments and access levels for filter buttons
@@ -248,6 +277,13 @@ export default function Documents({ documents = [], loadDocuments }) {
                       <Shield className="w-3 h-3" />
                       {d.access_level.replace('_', ' ')}
                     </span>
+                    
+                    <button 
+                      onClick={() => handleSummarize(d)}
+                      className="ml-auto text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-all flex items-center gap-1"
+                    >
+                      <Sparkles className="w-2.5 h-2.5 text-blue-400" /> Summarize
+                    </button>
                   </div>
                 </motion.div>
               ))}

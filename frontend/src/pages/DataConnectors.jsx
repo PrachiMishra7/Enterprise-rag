@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plug, Search, RefreshCw, CheckCircle2, AlertCircle, 
-  ArrowRight, ToggleLeft, ToggleRight, Settings, Plus, Slack, 
-  Github, Database, HelpCircle, HardDrive, Compass
+  ArrowRight, ToggleLeft, ToggleRight, Settings, Plus, MessageCircle, 
+  Code2, Database, HelpCircle, HardDrive, Compass, X
 } from 'lucide-react';
 
 const CONNECTOR_TEMPLATES = [
   { id: 'gdrive', name: 'Google Drive', desc: 'Sync files, documents, and spreadsheets from shared drives.', status: 'connected', lastSync: '10 mins ago', docCount: 142, icon: HardDrive, color: '#34a853', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  { id: 'slack', name: 'Slack', desc: 'Index messages, threads, and canvas documents from public channels.', status: 'disconnected', lastSync: 'Never', docCount: 0, icon: Slack, color: '#e01e5a', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
-  { id: 'github', name: 'GitHub Repositories', desc: 'Ingest code bases, readmes, issues, and markdown docs from repositories.', status: 'connected', lastSync: '2 hours ago', docCount: 1834, icon: Github, color: '#ffffff', bg: 'bg-white/10', border: 'border-white/30' },
+  { id: 'slack', name: 'Slack', desc: 'Index messages, threads, and canvas documents from public channels.', status: 'disconnected', lastSync: 'Never', docCount: 0, icon: MessageCircle, color: '#e01e5a', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
+  { id: 'github', name: 'GitHub Repositories', desc: 'Ingest code bases, readmes, issues, and markdown docs from repositories.', status: 'connected', lastSync: '2 hours ago', docCount: 1834, icon: Code2, color: '#ffffff', bg: 'bg-white/10', border: 'border-white/30' },
   { id: 'notion', name: 'Notion Workspace', desc: 'Import pages, databases, and workspace wikis.', status: 'configuring', lastSync: 'In Progress...', docCount: 0, icon: Compass, color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
   { id: 'confluence', name: 'Atlassian Confluence', desc: 'Sync internal knowledge base articles and space documents.', status: 'disconnected', lastSync: 'Never', docCount: 0, icon: Database, color: '#0052cc', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }
 ];

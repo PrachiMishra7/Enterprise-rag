@@ -1,6 +1,26 @@
-import { Menu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, Sun, Moon } from 'lucide-react';
 
 export default function Header({ page, setSidebarOpen }) {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    // Check initial state from HTML tag
+    const root = window.document.documentElement;
+    setIsDark(root.classList.contains('dark'));
+  }, []);
+
+  const toggleTheme = () => {
+    const root = window.document.documentElement;
+    if (isDark) {
+      root.classList.remove('dark');
+      setIsDark(false);
+    } else {
+      root.classList.add('dark');
+      setIsDark(true);
+    }
+  };
+
   const titles = {
     overview: { title: 'Dashboard Overview', sub: 'System health and document statistics' },
     chat: { title: 'Ask the AI', sub: 'RAG-powered answers with hallucination detection' },
@@ -24,6 +44,15 @@ export default function Header({ page, setSidebarOpen }) {
           <div className="text-lg font-semibold tracking-tight text-foreground">{h.title}</div>
           <div className="text-sm text-muted-foreground mt-0.5">{h.sub}</div>
         </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-secondary/50 border border-border hover:bg-secondary text-foreground transition-all"
+          aria-label="Toggle Theme"
+        >
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
       </div>
     </div>
   );

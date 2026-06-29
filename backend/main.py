@@ -156,6 +156,56 @@ async def list_documents(current_user: dict = Depends(get_current_user), db: Ses
     return {"documents": docs}
 
 
+@app.post("/documents/{doc_id}/summarize")
+async def summarize_document(
+    doc_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from models.database import Document, DocumentChunk
+    import requests
+    
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+        
+    chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).order_by(DocumentChunk.chunk_index).all()
+    if not chunks:
+        raise HTTPException(status_code=404, detail="No chunks found for this document")
+        
+    full_text = "\n\n".join([c.text for c in chunks[:5]])
+    
+    groq_api_key = os.environ.get("GROQ_API_KEY", "")
+    if not groq_api_key:
+        return {"summary": f"### Document Summary: {doc.filename}\n\n*This is a mock summary because GROQ_API_KEY is not set.*\n\n- **Filename**: {doc.filename}\n- **Chunks**: {len(chunks)} segments indexed\n- **Department**: {doc.department.upper()}\n- **Access Level**: {doc.access_level.upper()}\n\n**Key Takeaway**: Ensure API keys are configured to unlock real-time Groq LLM summarization."}
+        
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {groq_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {"role": "system", "content": "You are a professional enterprise document summarizer. Generate a concise, highly-structured executive summary of the document with 3-4 bullet points highlighting key insights, security scope, and corporate relevance."},
+                    {"role": "user", "content": f"Document: {doc.filename}\nDepartment: {doc.department}\nAccess Level: {doc.access_level}\n\nContent:\n{full_text}"}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 400
+            },
+            timeout=30,
+            verify=False
+        )
+        response.raise_for_status()
+        summary = response.json()["choices"][0]["message"]["content"]
+        return {"summary": summary}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
+
+
+
 # ─── Query Endpoint ───────────────────────────────────────────────────────────
 
 @app.post("/query", response_model=QueryResponse)
