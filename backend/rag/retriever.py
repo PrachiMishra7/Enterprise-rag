@@ -29,6 +29,18 @@ class HybridRetriever:
         return DocumentProcessor().get_all_chunks(db)
 
     def _build_index(self, db):
+        # Try to load existing persistent DB first
+        if os.path.exists(self.persist_directory) and os.listdir(self.persist_directory):
+            try:
+                self.vectorstore = Chroma(
+                    persist_directory=self.persist_directory, 
+                    embedding_function=self.embeddings
+                )
+                self._initialized = True
+                return
+            except Exception as e:
+                print(f"Failed to load persistent Chroma DB: {e}")
+
         chunks = self._get_all_chunks(db)
         if not chunks:
             self._initialized = True

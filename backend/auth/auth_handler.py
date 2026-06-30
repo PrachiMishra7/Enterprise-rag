@@ -9,7 +9,7 @@ from models.database import User
 
 SECRET_KEY = "enterprise-rag-secret-key-2024-change-in-production"
 ALGORITHM = "HS256"
-TOKEN_EXPIRE_HOURS = 24
+TOKEN_EXPIRE_HOURS = 2400  # Increased for local development
 
 # Role hierarchy and permissions
 ROLE_PERMISSIONS = {
@@ -124,9 +124,10 @@ class AuthHandler:
                 "role": payload["role"],
                 "name": payload["name"]
             }
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
+        except Exception as e:
+            import traceback
+            print("JWT Decode Error:", repr(e))
+            traceback.print_exc()
             return None
 
     def get_user_permissions(self, role: str) -> dict:

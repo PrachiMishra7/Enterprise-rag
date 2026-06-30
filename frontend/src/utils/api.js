@@ -10,6 +10,14 @@ export async function apiCall(method, endpoint, body = null, isFormData = false,
 
   const res = await fetch(`${API_BASE}${endpoint}`, options);
   const data = await res.json();
+  
+  if (res.status === 401) {
+    // Automatically log out if token is invalid
+    localStorage.removeItem('enterprise_token');
+    localStorage.removeItem('enterprise_user');
+    window.location.reload();
+  }
+  
   if (!res.ok) throw new Error(data.detail || 'API request failed');
   return data;
 }
