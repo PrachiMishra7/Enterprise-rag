@@ -52,7 +52,7 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#060913] text-white overflow-y-auto relative">
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#060913] text-slate-900 dark:text-white overflow-y-auto relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto w-full p-6 md:p-10 relative z-10 flex-1 flex flex-col">
@@ -69,13 +69,13 @@ export default function UserManagement() {
 
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-700 dark:text-slate-400" />
               <input 
                 type="text" 
                 placeholder="Search users..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-800 dark:text-slate-500"
               />
             </div>
             <button 
@@ -88,7 +88,7 @@ export default function UserManagement() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white/[0.02] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -104,29 +104,29 @@ export default function UserManagement() {
               <tbody className="divide-y divide-white/5 text-xs">
                 {filteredUsers.map(u => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-4 px-6 font-bold text-white flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-slate-300">
+                    <td className="py-4 px-6 font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300">
                         {u.name.charAt(0)}
                       </div>
                       {u.name}
                     </td>
-                    <td className="py-4 px-6 text-slate-300 font-mono">{u.email}</td>
-                    <td className="py-4 px-6 text-slate-400 font-semibold">{u.department}</td>
+                    <td className="py-4 px-6 text-slate-700 dark:text-slate-300 font-mono">{u.email}</td>
+                    <td className="py-4 px-6 text-slate-700 dark:text-slate-400 font-semibold">{u.department}</td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[9px] font-extrabold uppercase tracking-widest ${getRoleColor(u.role)}`}>
                         <Shield className="w-3 h-3" />
                         {u.role.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-slate-400">{u.joined}</td>
+                    <td className="py-4 px-6 text-slate-700 dark:text-slate-400">{u.joined}</td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors">
+                        <button className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => handleDeleteUser(u.id)}
-                          className="p-2 rounded-lg bg-white/5 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors"
+                          className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -155,16 +155,16 @@ export default function UserManagement() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-[#0b1020] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative z-10"
+                className="bg-[#0b1020] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative z-10"
               >
-                <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                  <h3 className="text-md font-black tracking-tight text-white uppercase flex items-center gap-2">
+                <div className="p-6 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
+                  <h3 className="text-md font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
                     <KeyRound className="w-5 h-5 text-purple-400" />
                     Register New Account
                   </h3>
                   <button 
                     onClick={() => setShowAddUser(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white"
+                    className="p-1 rounded-lg text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:text-white"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -180,7 +180,7 @@ export default function UserManagement() {
                         value={newUser.name}
                         onChange={e => setNewUser(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Sarah Connor"
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-white"
+                        className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -191,7 +191,7 @@ export default function UserManagement() {
                         value={newUser.email}
                         onChange={e => setNewUser(prev => ({ ...prev, email: e.target.value }))}
                         placeholder="sarah.c@company.com"
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-white"
+                        className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -202,7 +202,7 @@ export default function UserManagement() {
                         value={newUser.department}
                         onChange={e => setNewUser(prev => ({ ...prev, department: e.target.value }))}
                         placeholder="HR"
-                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-white"
+                        className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -210,7 +210,7 @@ export default function UserManagement() {
                       <select 
                         value={newUser.role}
                         onChange={e => setNewUser(prev => ({ ...prev, role: e.target.value }))}
-                        className="w-full px-3 py-2.5 bg-[#0a0f1d] border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-white"
+                        className="w-full px-3 py-2.5 bg-[#0a0f1d] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
                       >
                         <option value="employee">Employee (Standard View)</option>
                         <option value="manager">Manager (Read & Upload)</option>
@@ -221,11 +221,11 @@ export default function UserManagement() {
                     </div>
                   </div>
 
-                  <div className="p-6 bg-black/20 border-t border-white/5 flex justify-end gap-3">
+                  <div className="p-6 bg-black/20 border-t border-slate-200 dark:border-white/5 flex justify-end gap-3">
                     <button 
                       type="button"
                       onClick={() => setShowAddUser(false)}
-                      className="px-4 py-2 bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 text-slate-300"
+                      className="px-4 py-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 text-slate-700 dark:text-slate-300"
                     >
                       Cancel
                     </button>

@@ -40,7 +40,7 @@ export default function Upload({ showToast, loadDocuments }) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 md:p-12">
+    <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-white">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">Upload Knowledge</h1>
         <p className="text-muted-foreground text-base mb-10">

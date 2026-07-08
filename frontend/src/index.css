@@ -4,6 +4,7 @@
 @import "@fontsource-variable/geist";
 
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {

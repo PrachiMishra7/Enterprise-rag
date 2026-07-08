@@ -32,7 +32,7 @@ export default function Header({ page, setSidebarOpen }) {
   const h = titles[page] || titles.overview;
 
   return (
-    <div className="flex items-center justify-between px-8 py-5 border-b border-white/[0.05] bg-white/[0.01] backdrop-blur-xl z-20 sticky top-0">
+    <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200 dark:border-white/[0.05] bg-slate-50/50 dark:bg-white/[0.01] backdrop-blur-xl z-20 sticky top-0">
       <div className="flex items-center gap-4">
         <button 
           className="md:hidden p-2 rounded-md border border-border bg-background hover:bg-secondary text-foreground" 

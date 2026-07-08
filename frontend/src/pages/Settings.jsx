@@ -25,7 +25,7 @@ export default function SystemSettings() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#060913] text-white overflow-y-auto relative">
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#060913] text-slate-900 dark:text-white overflow-y-auto relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto w-full p-6 md:p-10 relative z-10 space-y-8">
@@ -45,8 +45,8 @@ export default function SystemSettings() {
         <div className="grid grid-cols-1 gap-6">
 
           {/* API Key Config */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
-            <h3 className="text-md font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <div className="bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-md font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Key className="w-5 h-5 text-indigo-400" /> API Connections
             </h3>
             
@@ -57,11 +57,11 @@ export default function SystemSettings() {
                   type={showKey ? 'text' : 'password'} 
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500/50 text-white font-mono"
+                  className="w-full pl-4 pr-12 py-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500/50 text-slate-900 dark:text-white font-mono"
                 />
                 <button 
                   onClick={() => setShowKey(!showKey)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:text-white"
                 >
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -70,8 +70,8 @@ export default function SystemSettings() {
           </div>
 
           {/* RAG Strategy parameters */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
-            <h3 className="text-md font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <div className="bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-md font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Sliders className="w-5 h-5 text-indigo-400" /> Vector Index & RAG Strategy
             </h3>
 
@@ -79,7 +79,7 @@ export default function SystemSettings() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
                   <span>Chunk Size (chars)</span>
-                  <span className="text-white font-mono">{chunkSize}</span>
+                  <span className="text-slate-900 dark:text-white font-mono">{chunkSize}</span>
                 </div>
                 <input 
                   type="range" min="200" max="3000" step="100" value={chunkSize}
@@ -91,7 +91,7 @@ export default function SystemSettings() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
                   <span>Chunk Overlap (chars)</span>
-                  <span className="text-white font-mono">{chunkOverlap}</span>
+                  <span className="text-slate-900 dark:text-white font-mono">{chunkOverlap}</span>
                 </div>
                 <input 
                   type="range" min="0" max="800" step="50" value={chunkOverlap}
@@ -103,7 +103,7 @@ export default function SystemSettings() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
                   <span>Top K retrieved Chunks</span>
-                  <span className="text-white font-mono">{topK}</span>
+                  <span className="text-slate-900 dark:text-white font-mono">{topK}</span>
                 </div>
                 <input 
                   type="range" min="1" max="15" step="1" value={topK}
@@ -115,7 +115,7 @@ export default function SystemSettings() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
                   <span>Min Retrieval Similarity</span>
-                  <span className="text-white font-mono">{(minSimilarity * 100).toFixed(0)}%</span>
+                  <span className="text-slate-900 dark:text-white font-mono">{(minSimilarity * 100).toFixed(0)}%</span>
                 </div>
                 <input 
                   type="range" min="0.30" max="0.95" step="0.05" value={minSimilarity}
@@ -127,14 +127,14 @@ export default function SystemSettings() {
           </div>
 
           {/* Model Options */}
-          <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
-            <h3 className="text-md font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <div className="bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-md font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Cpu className="w-5 h-5 text-indigo-400" /> Default Embedding Engine
             </h3>
             
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">Embedding Model</label>
-              <select className="w-full px-3 py-3 bg-[#0a0f1d] border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500/50 text-white">
+              <select className="w-full px-3 py-3 bg-[#0a0f1d] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-500/50 text-slate-900 dark:text-white">
                 <option>all-MiniLM-L6-v2 (Local HuggingFace CPU/Fast)</option>
                 <option>text-embedding-3-small (OpenAI Cloud)</option>
                 <option>text-embedding-3-large (OpenAI Cloud)</option>

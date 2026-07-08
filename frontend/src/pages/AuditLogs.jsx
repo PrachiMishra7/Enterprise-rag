@@ -23,7 +23,7 @@ export default function AuditLogs() {
   }, [token]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#0a0f1d] text-white">
+    <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-white">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Audit & Security Logs</h1>
@@ -45,26 +45,26 @@ export default function AuditLogs() {
               <tbody className="text-sm divide-y divide-[#2d3748]/50">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-500">Loading secure logs...</td>
+                    <td colSpan="5" className="p-8 text-center text-slate-800 dark:text-slate-500">Loading secure logs...</td>
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-500">No query logs found. Start asking questions to generate audit trails.</td>
+                    <td colSpan="5" className="p-8 text-center text-slate-800 dark:text-slate-500">No query logs found. Start asking questions to generate audit trails.</td>
                   </tr>
                 ) : (
                   logs.map((log) => (
                     <tr key={log.id} className="hover:bg-[#1e293b]/50 transition-colors">
-                      <td className="p-4 text-slate-400 whitespace-nowrap text-xs font-mono">
+                      <td className="p-4 text-slate-700 dark:text-slate-400 whitespace-nowrap text-xs font-mono">
                         <div className="flex items-center gap-2">
                           <Clock className="w-3 h-3" />
                           {new Date(log.timestamp).toLocaleString()}
                         </div>
                       </td>
-                      <td className="p-4 font-medium text-white max-w-md truncate" title={log.query}>
+                      <td className="p-4 font-medium text-slate-900 dark:text-white max-w-md truncate" title={log.query}>
                         {log.query}
                       </td>
                       <td className="p-4">
-                        <span className="px-2.5 py-1 rounded bg-[#1e293b] border border-[#2d3748] text-xs font-bold uppercase tracking-wider text-slate-300">
+                        <span className="px-2.5 py-1 rounded bg-[#1e293b] border border-[#2d3748] text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                           {log.agent}
                         </span>
                       </td>

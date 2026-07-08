@@ -56,10 +56,10 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-white tracking-tighter">{value}%</span>
+          <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{value}%</span>
         </div>
       </div>
-      <h3 className="text-[14px] font-bold text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">{label}</h3>
+      <h3 className="text-[14px] font-bold text-slate-900 dark:text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70">{label}</h3>
       <p className="text-[11px] text-[#8b92a5] font-semibold mt-1 uppercase tracking-widest">{sublabel}</p>
     </motion.div>
   );
@@ -85,25 +85,9 @@ export default function Overview({ navigateTo }) {
   }, [token]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-transparent text-white relative">
+    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-transparent text-slate-900 dark:text-white relative">
 
-      {/* Recharts SVG Gradients Definitions */}
-      <svg width="0" height="0">
-        <defs>
-          <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#c084fc" stopOpacity={0.6} />
-            <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="colorDocs" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#f472b6" stopOpacity={0.6} />
-            <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#38bdf8" />
-            <stop offset="100%" stopColor="#818cf8" />
-          </linearGradient>
-        </defs>
-      </svg>
+
 
       <motion.div 
         variants={containerVariants} 
@@ -115,7 +99,7 @@ export default function Overview({ navigateTo }) {
         {/* Header Section */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">Enterprise Analytics</h1>
+            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-200 bg-clip-text text-transparent">Enterprise Analytics</h1>
             <p className="text-sm text-[#8b92a5] font-semibold mt-2 uppercase tracking-widest">Real-time LLM tracking & system health</p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -123,17 +107,17 @@ export default function Overview({ navigateTo }) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigateTo('upload')}
-              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white text-sm font-black rounded-xl shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all flex items-center gap-3 border border-white/10"
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-slate-900 dark:text-white text-sm font-black rounded-xl shadow-[0_0_30px_rgba(139,92,246,0.5)] transition-all flex items-center gap-3 border border-slate-200 dark:border-white/10"
             >
               <Database className="w-5 h-5" /> Import Knowledge
             </motion.button>
             <motion.button 
-              whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigateTo('chat')}
-              className="px-6 py-3 bg-white/5 backdrop-blur-md text-white text-sm font-black rounded-xl border border-white/10 transition-all flex items-center gap-3 shadow-xl"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-slate-900 dark:text-white text-sm font-black rounded-xl border border-blue-500/30 transition-all flex items-center gap-3 shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)]"
             >
-              Start Chat <ArrowRight className="w-5 h-5 text-purple-400" />
+              Start Chat <ArrowRight className="w-5 h-5 text-slate-900 dark:text-white/80" />
             </motion.button>
           </div>
         </motion.div>
@@ -154,12 +138,12 @@ export default function Overview({ navigateTo }) {
               <div className={`absolute top-0 right-0 w-[150%] h-[150%] bg-gradient-to-bl ${stat.bg} opacity-30 group-hover:opacity-70 transition-opacity pointer-events-none rounded-full blur-3xl -mr-[50%] -mt-[50%]`}></div>
               <div className="relative z-10">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg" style={{ color: stat.color, boxShadow: `0 0 20px ${stat.color}40` }}>
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center shadow-lg" style={{ color: stat.color, boxShadow: `0 0 20px ${stat.color}40` }}>
                     <stat.icon className="w-6 h-6" />
                   </div>
                   <p className="text-[11px] font-black text-[#8b92a5] uppercase tracking-widest">{stat.label}</p>
                 </div>
-                <h2 className="text-4xl font-black text-white tracking-tighter drop-shadow-md">{stat.value}</h2>
+                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-md">{stat.value}</h2>
               </div>
             </motion.div>
           ))}
@@ -180,6 +164,16 @@ export default function Overview({ navigateTo }) {
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.volume_history.length ? stats.volume_history : areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#c084fc" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorDocs" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f472b6" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                   <XAxis dataKey="name" stroke="#8b92a5" fontSize={12} tickLine={false} axisLine={false} fontWeight="bold" />
                   <YAxis stroke="#8b92a5" fontSize={12} tickLine={false} axisLine={false} fontWeight="bold" />
@@ -209,6 +203,12 @@ export default function Overview({ navigateTo }) {
               <div className="h-[160px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.department_usage.length ? stats.department_usage : [{name: 'Loading', usage: 0}]} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#38bdf8" />
+                        <stop offset="100%" stopColor="#818cf8" />
+                      </linearGradient>
+                    </defs>
                     <XAxis dataKey="name" stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" />
                     <YAxis stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" />
                     <Tooltip 

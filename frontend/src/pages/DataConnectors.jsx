@@ -45,7 +45,7 @@ export default function DataConnectors() {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-[#060913] text-white overflow-y-auto relative">
+    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-[#060913] text-slate-900 dark:text-white overflow-y-auto relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto w-full p-6 md:p-10 relative z-10 flex-1 flex flex-col">
@@ -61,13 +61,13 @@ export default function DataConnectors() {
           </div>
           
           <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-700 dark:text-slate-400" />
             <input 
               type="text" 
               placeholder="Search cloud databases..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-slate-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-slate-800 dark:text-slate-500"
             />
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function DataConnectors() {
               <motion.div 
                 key={conn.id}
                 whileHover={{ y: -4 }}
-                className="bg-white/[0.02] backdrop-blur-2xl border border-white/10 hover:border-blue-500/30 rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all shadow-lg hover:shadow-2xl"
+                className="bg-white/[0.02] backdrop-blur-2xl border border-slate-200 dark:border-white/10 hover:border-blue-500/30 rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all shadow-lg hover:shadow-2xl"
               >
                 <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[40px] -mr-16 -mt-16 opacity-10 pointer-events-none`} style={{ backgroundColor: conn.color }}></div>
                 
@@ -98,7 +98,7 @@ export default function DataConnectors() {
                     className="p-1 rounded-xl transition-opacity hover:opacity-85 disabled:opacity-50"
                   >
                     {loadingId === conn.id ? (
-                      <RefreshCw className="w-6 h-6 text-slate-400 animate-spin" />
+                      <RefreshCw className="w-6 h-6 text-slate-700 dark:text-slate-400 animate-spin" />
                     ) : isConnected ? (
                       <ToggleRight className="w-9 h-9 text-blue-500 cursor-pointer" />
                     ) : (
@@ -108,31 +108,31 @@ export default function DataConnectors() {
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2">{conn.name}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed min-h-[48px]">{conn.desc}</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{conn.name}</h3>
+                  <p className="text-xs text-slate-700 dark:text-slate-400 leading-relaxed min-h-[48px]">{conn.desc}</p>
                 </div>
 
-                <div className="flex flex-col gap-2 pt-4 border-t border-white/5 text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
+                <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 dark:border-white/5 text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <span className={isConnected ? 'text-emerald-400' : isConfiguring ? 'text-amber-400 animate-pulse' : 'text-slate-500'}>
+                    <span className={isConnected ? 'text-emerald-400' : isConfiguring ? 'text-amber-400 animate-pulse' : 'text-slate-800 dark:text-slate-500'}>
                       {conn.status}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Indexed Pages:</span>
-                    <span className="text-white">{conn.docCount}</span>
+                    <span className="text-slate-900 dark:text-white">{conn.docCount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Last Synced:</span>
-                    <span className="text-white">{conn.lastSync}</span>
+                    <span className="text-slate-900 dark:text-white">{conn.lastSync}</span>
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-2 pt-2 z-10">
                   <button 
                     onClick={() => setShowConfig(conn)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1 transition-all"
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-blue-500/30 hover:bg-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-all"
                   >
                     <Settings className="w-3.5 h-3.5" /> Configure
                   </button>
@@ -158,16 +158,16 @@ export default function DataConnectors() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-[#0b1020] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative z-10"
+                className="bg-[#0b1020] border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative z-10"
               >
-                <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                  <h3 className="text-md font-black tracking-tight text-white uppercase flex items-center gap-2">
+                <div className="p-6 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
+                  <h3 className="text-md font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
                     <Plug className="w-5 h-5 text-blue-400" />
                     Configure {showConfig.name}
                   </h3>
                   <button 
                     onClick={() => setShowConfig(null)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white"
+                    className="p-1 rounded-lg text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:text-white"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -179,7 +179,7 @@ export default function DataConnectors() {
                     <input 
                       type="password" 
                       placeholder="••••••••••••••••••••••••"
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-white"
+                      className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -187,15 +187,15 @@ export default function DataConnectors() {
                     <input 
                       type="text" 
                       placeholder="root"
-                      className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-white"
+                      className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
 
-                <div className="p-6 bg-black/20 border-t border-white/5 flex justify-end gap-3">
+                <div className="p-6 bg-black/20 border-t border-slate-200 dark:border-white/5 flex justify-end gap-3">
                   <button 
                     onClick={() => setShowConfig(null)}
-                    className="px-4 py-2 bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 text-slate-300"
+                    className="px-4 py-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 text-slate-700 dark:text-slate-300"
                   >
                     Close
                   </button>

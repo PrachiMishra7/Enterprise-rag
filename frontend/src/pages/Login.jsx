@@ -48,16 +48,16 @@ export default function Login() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-md relative z-10 p-6"
       >
-        <div className="bg-card/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+        <div className="bg-card/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
           
           {/* Top Edge Glow */}
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
           
           <div className="text-center mb-10 relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25 border border-white/20">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 text-slate-900 dark:text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25 border border-white/20">
               <Bot className="w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2 font-sans">EnterpriseRAG</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">EnterpriseRAG</h1>
             <p className="text-sm text-muted-foreground font-medium">Secure AI Document Intelligence</p>
           </div>
           
@@ -76,7 +76,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</label>
               <input 
-                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
+                className="w-full px-4 py-3 bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
                 type="email" 
                 placeholder="name@company.com" 
                 value={email} 
@@ -86,7 +86,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">Password</label>
               <input 
-                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
+                className="w-full px-4 py-3 bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
                 type="password" 
                 placeholder="••••••••" 
                 value={password} 
@@ -103,7 +103,7 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-white/5">
+          <div className="mt-10 pt-6 border-t border-slate-200 dark:border-white/5">
             <div className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest mb-4 text-center">Demo Access Points</div>
             <div className="grid gap-2.5">
               {DEMO_ACCOUNTS.map(a => {
@@ -111,15 +111,15 @@ export default function Login() {
                 return (
                   <div 
                     key={a.email} 
-                    className="flex justify-between items-center px-4 py-3 bg-black/10 border border-white/5 hover:border-white/20 hover:bg-white/5 rounded-xl cursor-pointer transition-all group" 
+                    className="flex justify-between items-center px-4 py-3 bg-black/10 border border-slate-200 dark:border-white/5 hover:border-white/20 hover:bg-slate-100 dark:bg-white/5 rounded-xl cursor-pointer transition-all group" 
                     onClick={() => { setEmail(a.email); setPassword(a.password); }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center border border-white/5 ${a.color}`}>
+                      <div className={`w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center border border-slate-200 dark:border-white/5 ${a.color}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col text-left">
-                        <span className="font-semibold text-white text-xs">{a.label}</span>
+                        <span className="font-semibold text-slate-900 dark:text-white text-xs">{a.label}</span>
                         <span className="text-[10px] text-muted-foreground">{a.email}</span>
                       </div>
                     </div>

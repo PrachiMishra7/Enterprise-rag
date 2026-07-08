@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AGENTS = [
@@ -98,7 +98,7 @@ export default function Chat({ queryInput, setQueryInput }) {
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-4 max-w-full animate-in slide-in-from-bottom-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
-              m.role === 'user' ? 'bg-primary text-white border-primary shadow-primary/20' : 'glass-panel text-foreground border-white/10'
+              m.role === 'user' ? 'bg-primary text-slate-900 dark:text-white border-primary shadow-primary/20' : 'glass-panel text-foreground border-slate-200 dark:border-white/10'
             }`}>
               {m.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
             </div>
@@ -106,7 +106,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             <div className={`flex flex-col max-w-[85%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === 'user' 
-                  ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] px-4 py-3 rounded-2xl rounded-tr-sm border border-white/10' 
+                  ? 'bg-gradient-to-r from-primary to-purple-600 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] px-4 py-3 rounded-2xl rounded-tr-sm border border-slate-200 dark:border-white/10' 
                   : 'text-foreground pt-1.5'
               }`}>
                 {m.content}
@@ -182,7 +182,7 @@ export default function Chat({ queryInput, setQueryInput }) {
           {['What is the remote work policy?', 'Summarize the NDA', 'How to claim expenses?'].map(q => (
             <button 
               key={q} 
-              className="px-4 py-2 glass-panel glass-panel-hover rounded-full text-xs font-bold text-slate-300 hover:text-white transition-all shadow-lg"
+              className="px-4 py-2 glass-panel glass-panel-hover rounded-full text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white transition-all shadow-lg"
               onClick={() => { setQueryInput(q); }}
             >
               {q}
@@ -197,18 +197,18 @@ export default function Chat({ queryInput, setQueryInput }) {
             disabled={typing}
           >
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border border-white/10 shadow-inner ${AGENTS.find(a => a.id === targetAgent)?.bg || 'bg-white/10'} ${AGENTS.find(a => a.id === targetAgent)?.color || 'text-white'}`}>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-inner ${AGENTS.find(a => a.id === targetAgent)?.bg || 'bg-black/5 dark:bg-white/10'} ${AGENTS.find(a => a.id === targetAgent)?.color || 'text-slate-900 dark:text-white'}`}>
                 {(() => { const Icon = AGENTS.find(a => a.id === targetAgent)?.icon || Sparkles; return <Icon className="w-5 h-5" /> })()}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-white uppercase tracking-wider">{AGENTS.find(a => a.id === targetAgent)?.name || 'Auto-Detect Router'}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-bold text-slate-300">{AGENTS.find(a => a.id === targetAgent)?.provider || 'Enterprise Edge'}</span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{AGENTS.find(a => a.id === targetAgent)?.name || 'Auto-Detect Router'}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[9px] font-bold text-slate-800 dark:text-slate-500 dark:text-slate-300">{AGENTS.find(a => a.id === targetAgent)?.provider || 'Enterprise Edge'}</span>
                 </div>
-                <div className="text-[10px] text-slate-400 font-semibold mt-0.5">{AGENTS.find(a => a.id === targetAgent)?.desc || 'Dynamically routes query to the best expert'}</div>
+                <div className="text-[10px] text-slate-800 dark:text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{AGENTS.find(a => a.id === targetAgent)?.desc || 'Dynamically routes query to the best expert'}</div>
               </div>
             </div>
-            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isAgentDropdownOpen ? 'rotate-180 text-white' : 'group-hover:text-white'}`} />
+            <ChevronDown className={`w-5 h-5 text-slate-700 dark:text-slate-400 transition-transform duration-300 ${isAgentDropdownOpen ? 'rotate-180 text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-slate-900 dark:text-white'}`} />
           </button>
 
           <AnimatePresence>
@@ -226,48 +226,57 @@ export default function Chat({ queryInput, setQueryInput }) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute bottom-full mb-4 left-0 w-[480px] bg-[#0f1525] border border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 overflow-hidden"
+                  className="absolute bottom-full mb-4 left-0 w-[480px] bg-white dark:bg-[#0f1525] border border-slate-200 dark:border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 overflow-hidden"
                 >
-                  <div className="px-4 py-3 mb-1 border-b border-white/5 flex items-center justify-between">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-4 py-3 mb-1 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-slate-800 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <Server className="w-3.5 h-3.5" /> Execution Environment
                     </div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase">Provider / Latency</div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase">Provider / Latency</div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setIsAgentDropdownOpen(false); }}
+                        className="p-1 rounded-md text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Close"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="flex flex-col gap-2 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pb-1">
                     {AGENTS.map(agent => (
                       <div
                         key={agent.id}
-                        className={`flex items-start gap-4 w-full p-3.5 rounded-xl text-left transition-all cursor-pointer relative overflow-hidden group ${targetAgent === agent.id ? 'bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}
+                        className={`flex items-start gap-4 w-full p-3.5 rounded-xl text-left transition-all cursor-pointer relative overflow-hidden group ${targetAgent === agent.id ? 'bg-primary/5 dark:bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-slate-100 dark:bg-white/5 border border-transparent'}`}
                         onClick={() => { setTargetAgent(agent.id); setIsAgentDropdownOpen(false); }}
                       >
                         {targetAgent === agent.id && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-[0_0_10px_rgba(139,92,246,0.8)]"></div>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-[0_0_10px_rgba(139,92,246,0.3)] dark:shadow-[0_0_10px_rgba(139,92,246,0.8)]"></div>
                         )}
-                        <div className={`w-10 h-10 rounded-lg flex shrink-0 items-center justify-center border border-white/10 ${agent.bg} ${agent.color}`}>
+                        <div className={`w-10 h-10 rounded-lg flex shrink-0 items-center justify-center border border-slate-200 dark:border-white/10 ${agent.bg} ${agent.color}`}>
                           <agent.icon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-white">{agent.name}</span>
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest ${targetAgent === agent.id ? 'bg-primary/20 text-primary-foreground' : 'bg-white/10 text-slate-300'}`}>
+                              <span className="text-sm font-black text-slate-900 dark:text-white">{agent.name}</span>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest ${targetAgent === agent.id ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground' : 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-500 dark:text-slate-300'}`}>
                                 {agent.tag}
                               </span>
                             </div>
                             {targetAgent === agent.id && <Check className="w-4 h-4 text-primary shrink-0" />}
                           </div>
                           
-                          <div className="text-xs text-slate-400 font-medium leading-relaxed mb-3 truncate">{agent.desc}</div>
+                          <div className="text-xs text-slate-800 dark:text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-3 truncate">{agent.desc}</div>
                           
-                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-black/20 p-2 rounded-lg border border-white/5">
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-slate-800 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-black/20 p-2 rounded-lg border border-slate-100 dark:border-white/5">
                             <div className="flex items-center gap-1.5 truncate">
-                              <Cpu className="w-3.5 h-3.5 text-slate-400 shrink-0" /> 
+                              <Cpu className="w-3.5 h-3.5 text-slate-700 dark:text-slate-400 shrink-0" /> 
                               <span className="truncate">{agent.provider} ({agent.model})</span>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <Zap className="w-3.5 h-3.5 text-amber-400" /> {agent.latency}
+                              <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" /> {agent.latency}
                             </div>
                           </div>
                         </div>
@@ -282,7 +291,7 @@ export default function Chat({ queryInput, setQueryInput }) {
 
         <div className="flex gap-3 items-end relative">
           <textarea 
-            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 glass-panel bg-black/20 text-white placeholder:text-slate-500 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow shadow-xl" 
+            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 glass-panel bg-white/50 dark:bg-black/20 text-slate-900 dark:text-white placeholder:text-slate-700 dark:text-slate-400 dark:placeholder:text-slate-800 dark:text-slate-500 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow shadow-xl" 
             placeholder="Ask a question about enterprise documents..." 
             value={queryInput}
             onChange={e => setQueryInput(e.target.value)}
@@ -290,7 +299,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             rows="1"
           />
           <button 
-            className="absolute right-3 bottom-3 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]" 
+            className="absolute right-3 bottom-3 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-slate-900 dark:text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]" 
             onClick={sendQuery} 
             disabled={!queryInput.trim() || typing}
           >

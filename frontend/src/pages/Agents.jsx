@@ -14,7 +14,7 @@ const INITIAL_NODES = [
   { id: 'finance', type: 'agent', name: 'Finance Agent', x: 420, y: 290, icon: Landmark, color: 'text-amber-400', bg: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-400/50', shadow: 'shadow-amber-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.2, maxTokens: 512 },
   { id: 'it', type: 'agent', name: 'IT Helpdesk', x: 420, y: 410, icon: Monitor, color: 'text-orange-400', bg: 'from-orange-500/20 to-orange-600/5', border: 'border-orange-400/50', shadow: 'shadow-orange-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.4, maxTokens: 256 },
   { id: 'guard', type: 'core', name: 'Hallucination Guard', x: 760, y: 240, icon: ShieldCheck, color: 'text-rose-400', bg: 'from-rose-500/20 to-rose-600/5', border: 'border-rose-400/50', shadow: 'shadow-rose-500/20', out: ['output'], model: 'guard-rail-v2', temperature: 0.0, maxTokens: 50 },
-  { id: 'output', type: 'end', name: 'Final Response', x: 1080, y: 240, icon: Bot, color: 'text-white', bg: 'from-white/20 to-white/5', border: 'border-white/30', shadow: 'shadow-white/10', out: [], model: 'system', temperature: 0.2, maxTokens: 1000 },
+  { id: 'output', type: 'end', name: 'Final Response', x: 1080, y: 240, icon: Bot, color: 'text-slate-900 dark:text-white', bg: 'from-white/20 to-white/5', border: 'border-white/30', shadow: 'shadow-white/10', out: [], model: 'system', temperature: 0.2, maxTokens: 1000 },
 ];
 
 function BezierCurve({ startX, startY, endX, endY, color }) {
@@ -66,29 +66,29 @@ function FlowNode({ node, updateNodePosition, isSelected, onClick }) {
       <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${node.bg} opacity-30 pointer-events-none`}></div>
       
       <div className="flex items-center gap-4 relative z-10">
-        <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group-hover:shadow-[0_0_12px_currentColor] transition-all duration-300 ${node.color}`}>
+        <div className={`w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-inner group-hover:shadow-[0_0_12px_currentColor] transition-all duration-300 ${node.color}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-bold text-white tracking-tight truncate">{node.name}</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight truncate">{node.name}</h4>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${node.color.replace('text-', 'bg-')}`}></span>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{node.type}</span>
+            <span className="text-[9px] font-black text-slate-800 dark:text-slate-500 uppercase tracking-widest">{node.type}</span>
           </div>
         </div>
       </div>
       
-      <div className="text-[10px] text-slate-400 font-semibold relative z-10 flex justify-between bg-black/20 px-2.5 py-1.5 rounded-lg border border-white/5">
+      <div className="text-[10px] text-slate-700 dark:text-slate-400 font-semibold relative z-10 flex justify-between bg-black/20 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/5">
         <span className="truncate max-w-[120px]">{node.model}</span>
         <span>t={node.temperature.toFixed(1)}</span>
       </div>
       
       {node.type !== 'core' && node.id !== 'output' && (
-        <div className="pt-2 border-t border-white/5 flex justify-between px-1 text-[9px] font-extrabold text-slate-500 uppercase tracking-widest relative z-10">
+        <div className="pt-2 border-t border-slate-200 dark:border-white/5 flex justify-between px-1 text-[9px] font-extrabold text-slate-800 dark:text-slate-500 uppercase tracking-widest relative z-10">
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-slate-600"></div> IN
           </div>
-          <div className="flex items-center gap-1.5 text-white">
+          <div className="flex items-center gap-1.5 text-slate-900 dark:text-white">
             OUT <div className={`w-1.5 h-1.5 rounded-full ${node.color.replace('text-', 'bg-')} shadow-[0_0_6px_currentColor] animate-pulse`}></div>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function Agents({ navigateTo }) {
   };
 
   return (
-    <div className="flex-1 flex bg-transparent text-white overflow-hidden relative" onClick={() => setSelectedNode(null)}>
+    <div className="flex-1 flex bg-slate-50 dark:bg-transparent text-slate-900 dark:text-white overflow-hidden relative" onClick={() => setSelectedNode(null)}>
       
       <div className="absolute inset-0 z-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -214,21 +214,21 @@ export default function Agents({ navigateTo }) {
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <button 
               onClick={handleResetFlow}
-              className="p-3 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/5 rounded-xl transition-all text-slate-400 hover:text-white"
+              className="p-3 bg-slate-100 dark:bg-white/5 hover:bg-white/10 active:bg-white/15 border border-slate-200 dark:border-white/5 rounded-xl transition-all text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:text-white"
               title="Reset Flow to Default"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
             <button 
               onClick={handleAddAgentNode}
-              className="px-4 py-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-300 transition-all flex items-center gap-2"
+              className="px-4 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-white/10 active:bg-white/15 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 transition-all flex items-center gap-2"
             >
               <Plus className="w-4 h-4 text-blue-400" /> Add Agent Node
             </button>
             <button 
               onClick={handleExecuteFlow}
               disabled={executing}
-              className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-sky-400/20 shadow-lg shadow-blue-500/10 disabled:opacity-50"
+              className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-900 dark:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center gap-2 border border-sky-400/20 shadow-lg shadow-blue-500/10 disabled:opacity-50"
             >
               <Play className={`w-3.5 h-3.5 ${executing ? 'animate-spin' : ''}`} />
               {executing ? 'Compiling...' : 'Execute Flow'}
@@ -298,7 +298,7 @@ export default function Agents({ navigateTo }) {
 
           </div>
 
-          <div className="absolute bottom-6 left-6 p-4 glass-panel rounded-2xl flex items-center gap-3.5 text-xs font-bold text-slate-500 uppercase tracking-widest pointer-events-none select-none">
+          <div className="absolute bottom-6 left-6 p-4 glass-panel rounded-2xl flex items-center gap-3.5 text-xs font-bold text-slate-800 dark:text-slate-500 uppercase tracking-widest pointer-events-none select-none">
             <Compass className="w-4 h-4 text-blue-500 animate-spin" />
             <span>Interactive Sandbox • Draggable Canvas</span>
           </div>
@@ -313,16 +313,16 @@ export default function Agents({ navigateTo }) {
             exit={{ x: 350, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-80 glass-panel border-l border-white/10 z-30 flex flex-col relative shadow-2xl h-full"
+            className="w-80 glass-panel border-l border-slate-200 dark:border-white/10 z-30 flex flex-col relative shadow-2xl h-full"
           >
-            <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <div className="p-6 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Sliders className="w-5 h-5 text-blue-400" />
-                <h3 className="text-md font-black tracking-tight text-white uppercase">Node Config</h3>
+                <h3 className="text-md font-black tracking-tight text-slate-900 dark:text-white uppercase">Node Config</h3>
               </div>
               <button 
                 onClick={() => setSelectedNode(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="p-1.5 rounded-lg text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-white/5 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -330,22 +330,22 @@ export default function Agents({ navigateTo }) {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">Node Name</label>
+                <label className="text-[10px] font-bold text-slate-700 dark:text-[#8b92a5] uppercase tracking-wider">Node Name</label>
                 <input 
                   type="text" 
                   value={selectedNode.name}
                   onChange={(e) => handleUpdateNodeProp('name', e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-white"
+                  className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-white"
                   placeholder="Enter node name..."
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">LLM Model</label>
+                <label className="text-[10px] font-bold text-slate-700 dark:text-[#8b92a5] uppercase tracking-wider">LLM Model</label>
                 <select 
                   value={selectedNode.model}
                   onChange={(e) => handleUpdateNodeProp('model', e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#0a0f1d] border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-white"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-[#0a0f1d] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-white"
                 >
                   <option value="llama-3.1-8b">Llama 3.1 8B (Groq Fast)</option>
                   <option value="llama-3.1-70b">Llama 3.1 70B (Groq Quality)</option>
@@ -356,9 +356,9 @@ export default function Agents({ navigateTo }) {
               </div>
 
               <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
+                <div className="flex justify-between text-[10px] font-bold text-slate-700 dark:text-[#8b92a5] uppercase tracking-wider">
                   <span>Temperature</span>
-                  <span className="text-white">{selectedNode.temperature.toFixed(1)}</span>
+                  <span className="text-slate-900 dark:text-white">{selectedNode.temperature.toFixed(1)}</span>
                 </div>
                 <input 
                   type="range" 
@@ -369,23 +369,23 @@ export default function Agents({ navigateTo }) {
                   onChange={(e) => handleUpdateNodeProp('temperature', parseFloat(e.target.value))}
                   className="w-full accent-blue-500"
                 />
-                <span className="text-[9px] text-slate-500 font-medium">Lower values are more deterministic and precise.</span>
+                <span className="text-[9px] text-slate-800 dark:text-slate-500 font-medium">Lower values are more deterministic and precise.</span>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">Max Gen Tokens</label>
+                <label className="text-[10px] font-bold text-slate-700 dark:text-[#8b92a5] uppercase tracking-wider">Max Gen Tokens</label>
                 <input 
                   type="number" 
                   value={selectedNode.maxTokens}
                   onChange={(e) => handleUpdateNodeProp('maxTokens', parseInt(e.target.value) || 0)}
-                  className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-white"
+                  className="w-full px-3 py-2.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-white"
                 />
               </div>
 
             </div>
 
             {!['master', 'guard', 'output'].includes(selectedNode.id) && (
-              <div className="p-6 border-t border-white/5 bg-black/10">
+              <div className="p-6 border-t border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-black/10">
                 <button
                   onClick={() => handleDeleteNode(selectedNode.id)}
                   className="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 border border-red-500/30 hover:border-red-500/55 text-red-400 text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all"
