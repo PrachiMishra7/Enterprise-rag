@@ -97,7 +97,7 @@ export default function Documents({ documents = [], loadDocuments }) {
   const totalBytes = documents.reduce((acc, curr) => acc + (curr.file_size || 0), 0);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#060913] text-white overflow-y-auto relative">
+    <div className="flex-1 flex flex-col bg-transparent text-white overflow-y-auto relative">
       
       {/* Dynamic Ambient Background Gradients */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -136,7 +136,7 @@ export default function Documents({ documents = [], loadDocuments }) {
           transition={{ duration: 0.4 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10"
         >
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+          <div className="glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
               <FileText className="w-6 h-6" />
             </div>
@@ -146,7 +146,7 @@ export default function Documents({ documents = [], loadDocuments }) {
             </div>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+          <div className="glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <Database className="w-6 h-6" />
             </div>
@@ -156,7 +156,7 @@ export default function Documents({ documents = [], loadDocuments }) {
             </div>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+          <div className="glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
               <HardDrive className="w-6 h-6" />
             </div>
@@ -168,7 +168,7 @@ export default function Documents({ documents = [], loadDocuments }) {
         </motion.div>
 
         {/* Filter & Search Bar */}
-        <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="glass-panel rounded-2xl p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="relative w-full lg:w-96">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
@@ -220,7 +220,7 @@ export default function Documents({ documents = [], loadDocuments }) {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col items-center justify-center p-16 bg-white/[0.01] border border-white/5 rounded-3xl border-dashed"
+            className="flex-1 flex flex-col items-center justify-center p-16 glass-panel rounded-3xl border-dashed"
           >
             <div className="w-16 h-16 bg-white/5 border border-white/10 text-slate-400 rounded-2xl flex items-center justify-center mb-4">
               <Inbox className="w-8 h-8" />
@@ -244,7 +244,7 @@ export default function Documents({ documents = [], loadDocuments }) {
                   variants={itemVariants}
                   layout
                   whileHover={{ y: -4 }}
-                  className="group bg-white/[0.02] backdrop-blur-2xl border border-white/10 hover:border-blue-500/30 rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all shadow-lg hover:shadow-2xl"
+                  className="group glass-panel glass-panel-hover rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all shadow-lg hover:shadow-2xl"
                 >
                   {/* Subtle Glow Overlay */}
                   <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/10 blur-[40px] -mr-16 -mt-16 opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none"></div>

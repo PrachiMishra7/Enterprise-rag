@@ -80,18 +80,27 @@ function App() {
 
   return (
     <div className={`flex h-screen overflow-hidden relative bg-background text-foreground ${sidebarOpen ? 'sidebar-open' : ''}`}>
+      {/* Global Ambient Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-primary/15 rounded-full blur-[150px] mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/15 rounded-full blur-[150px] mix-blend-screen animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }}></div>
+      </div>
+
       <div 
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setSidebarOpen(false)}
       ></div>
+      
       <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} sidebarOpen={sidebarOpen} />
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-background">
+      
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-transparent">
         <Header page={page} setSidebarOpen={setSidebarOpen} />
         {renderContent()}
       </div>
+      
       {toast && (
-        <div className={`fixed bottom-8 right-8 px-5 py-3 rounded-md text-sm font-medium animate-in slide-in-from-bottom-5 z-50 shadow-lg bg-surface border ${
-          toast.type === 'success' ? 'border-l-4 border-l-green-600 text-foreground' : 'border-l-4 border-l-red-600 text-foreground'
+        <div className={`fixed bottom-8 right-8 px-5 py-3 rounded-xl text-sm font-semibold animate-in slide-in-from-bottom-5 z-50 shadow-2xl glass-panel ${
+          toast.type === 'success' ? 'border-l-4 border-l-green-500 text-foreground' : 'border-l-4 border-l-red-500 text-foreground'
         }`}>
           {toast.msg}
         </div>

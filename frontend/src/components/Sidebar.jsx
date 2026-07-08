@@ -45,7 +45,7 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
   const sectionsToRender = [...SECTIONS, ADMIN_SECTION];
 
   return (
-    <div className={`fixed inset-y-0 left-0 md:relative w-64 min-w-[256px] bg-[#0a0f1d] border-r border-white/5 flex flex-col z-50 h-full overflow-y-auto no-scrollbar transition-transform duration-300 ease-in-out shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+    <div className={`fixed inset-y-0 left-0 md:relative w-64 min-w-[256px] bg-white/[0.01] backdrop-blur-2xl border-r border-white/[0.05] flex flex-col z-50 h-full overflow-y-auto no-scrollbar transition-transform duration-300 ease-in-out shadow-[4px_0_24px_rgba(0,0,0,0.5)] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       
       {/* Background Glow */}
       <div className="absolute top-0 left-0 w-full h-32 bg-primary/10 blur-[80px] pointer-events-none"></div>
@@ -97,7 +97,7 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
         ))}
       </div>
 
-      <div className="m-4 p-4 bg-[#151c33]/80 backdrop-blur-xl rounded-xl border border-white/5 flex flex-col gap-1 relative z-10">
+      <div className="m-4 p-4 glass-panel rounded-xl flex flex-col gap-1 relative z-10">
         <div className="text-sm font-bold text-white">{user?.name}</div>
         <div className="text-xs text-slate-400 mb-2 truncate">{user?.email}</div>
         <span className="inline-block self-start text-[9px] px-2 py-1 rounded font-bold uppercase bg-primary/20 text-blue-300 border border-primary/30 tracking-wider">

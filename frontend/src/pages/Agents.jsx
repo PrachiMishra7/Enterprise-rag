@@ -56,10 +56,10 @@ function FlowNode({ node, updateNodePosition, isSelected, onClick }) {
       }}
       whileHover={{ scale: 1.02 }}
       whileDrag={{ scale: 1.05, cursor: 'grabbing' }}
-      className={`absolute w-64 p-4 bg-[#0a0f1d]/90 backdrop-blur-3xl border rounded-2xl shadow-2xl flex flex-col gap-3 z-10 cursor-grab group transition-all duration-150 ${
+      className={`absolute w-64 p-4 glass-panel rounded-2xl flex flex-col gap-3 z-10 cursor-grab group transition-all duration-150 ${
         isSelected 
           ? 'border-blue-500 ring-2 ring-blue-500/30' 
-          : `${node.border} hover:border-white/20`
+          : `${node.border} hover:border-white/20 glass-panel-hover`
       }`}
       style={{ left: node.x, top: node.y }}
     >
@@ -195,14 +195,14 @@ export default function Agents({ navigateTo }) {
   };
 
   return (
-    <div className="flex-1 flex bg-[#060913] text-white overflow-hidden relative" onClick={() => setSelectedNode(null)}>
+    <div className="flex-1 flex bg-transparent text-white overflow-hidden relative" onClick={() => setSelectedNode(null)}>
       
       <div className="absolute inset-0 z-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
 
       <div className="flex-1 flex flex-col relative z-10 overflow-hidden">
         
-        <div className="p-6 border-b border-white/5 bg-[#0a0f1d]/85 backdrop-blur-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="p-6 border-b border-white/[0.05] bg-white/[0.01] backdrop-blur-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <Sparkles className="w-5 h-5 text-blue-400" />
@@ -298,7 +298,7 @@ export default function Agents({ navigateTo }) {
 
           </div>
 
-          <div className="absolute bottom-6 left-6 p-4 bg-white/[0.02] backdrop-blur-2xl border border-white/5 rounded-2xl flex items-center gap-3.5 text-xs font-bold text-slate-500 uppercase tracking-widest pointer-events-none select-none">
+          <div className="absolute bottom-6 left-6 p-4 glass-panel rounded-2xl flex items-center gap-3.5 text-xs font-bold text-slate-500 uppercase tracking-widest pointer-events-none select-none">
             <Compass className="w-4 h-4 text-blue-500 animate-spin" />
             <span>Interactive Sandbox • Draggable Canvas</span>
           </div>
@@ -313,7 +313,7 @@ export default function Agents({ navigateTo }) {
             exit={{ x: 350, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-80 bg-[#0a0f1d] border-l border-white/10 z-30 flex flex-col relative shadow-2xl h-full"
+            className="w-80 glass-panel border-l border-white/10 z-30 flex flex-col relative shadow-2xl h-full"
           >
             <div className="p-6 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">

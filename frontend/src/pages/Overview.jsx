@@ -38,7 +38,7 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
   return (
     <motion.div 
       whileHover={{ y: -5, boxShadow: `0 20px 40px ${color}20` }}
-      className="flex flex-col items-center justify-center p-6 bg-white/[0.03] backdrop-blur-3xl rounded-3xl border border-white/10 relative shadow-2xl overflow-hidden group transition-all"
+      className="flex flex-col items-center justify-center p-6 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group transition-all"
     >
       <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity`} style={{ backgroundColor: color }}></div>
       
@@ -85,11 +85,7 @@ export default function Overview({ navigateTo }) {
   }, [token]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#060913] text-white relative">
-      
-      {/* Background Gradients */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-transparent text-white relative">
 
       {/* Recharts SVG Gradients Definitions */}
       <svg width="0" height="0">
@@ -153,7 +149,7 @@ export default function Overview({ navigateTo }) {
             <motion.div 
               key={i} 
               whileHover={{ y: -5, scale: 1.02 }}
-              className="p-6 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl relative overflow-hidden group shadow-2xl"
+              className="p-6 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group"
             >
               <div className={`absolute top-0 right-0 w-[150%] h-[150%] bg-gradient-to-bl ${stat.bg} opacity-30 group-hover:opacity-70 transition-opacity pointer-events-none rounded-full blur-3xl -mr-[50%] -mt-[50%]`}></div>
               <div className="relative z-10">
@@ -175,7 +171,7 @@ export default function Overview({ navigateTo }) {
           {/* Main Area Chart */}
           <motion.div 
             whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
-            className="xl:col-span-2 p-8 bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl relative overflow-hidden group"
+            className="xl:col-span-2 p-8 glass-panel rounded-3xl relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-purple-500/20 transition-all"></div>
             <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-8 flex items-center gap-2">
@@ -204,7 +200,7 @@ export default function Overview({ navigateTo }) {
           <div className="flex flex-col gap-6">
             <motion.div 
               whileHover={{ scale: 1.02 }}
-              className="p-8 bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-3xl flex-1 shadow-2xl relative overflow-hidden group"
+              className="p-8 glass-panel glass-panel-hover rounded-3xl flex-1 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/10 rounded-full blur-[60px] -mr-24 -mt-24 pointer-events-none group-hover:bg-sky-500/20 transition-all"></div>
               <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">

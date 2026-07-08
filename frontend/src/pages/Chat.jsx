@@ -1,7 +1,36 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const AGENTS = [
+  { 
+    id: 'auto', name: 'Auto-Detect Router', desc: 'Dynamically routes query to the best expert', 
+    icon: Sparkles, color: 'text-blue-400', bg: 'bg-blue-500/10',
+    provider: 'Enterprise Edge', model: 'Ensemble Routing', latency: '~1.2s', tag: 'Recommended'
+  },
+  { 
+    id: 'hr', name: 'HR Expert', desc: 'Trained on company policies, benefits, and culture', 
+    icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-500/10',
+    provider: 'Azure OpenAI', model: 'GPT-4o', latency: '~800ms', tag: 'High Quality'
+  },
+  { 
+    id: 'legal', name: 'Legal Counsel', desc: 'Specialized in contracts, compliance, and NDAs', 
+    icon: Scale, color: 'text-purple-400', bg: 'bg-purple-500/10',
+    provider: 'AWS Bedrock', model: 'Claude 3.5 Sonnet', latency: '~900ms', tag: 'High Accuracy'
+  },
+  { 
+    id: 'finance', name: 'Finance Analyst', desc: 'Access to payroll, expenses, and budgets', 
+    icon: Landmark, color: 'text-amber-400', bg: 'bg-amber-500/10',
+    provider: 'Groq', model: 'Llama 3.1 70B', latency: '~300ms', tag: 'Ultra Fast'
+  },
+  { 
+    id: 'it', name: 'IT Support', desc: 'Hardware troubleshooting and tech policies', 
+    icon: Monitor, color: 'text-orange-400', bg: 'bg-orange-500/10',
+    provider: 'Groq', model: 'Llama 3.1 8B', latency: '~200ms', tag: 'Fast'
+  },
+];
 
 export default function Chat({ queryInput, setQueryInput }) {
   const { user, token } = useAuth();
@@ -15,6 +44,7 @@ export default function Chat({ queryInput, setQueryInput }) {
     citations: []
   }]);
   const [typing, setTyping] = useState(false);
+  const [isAgentDropdownOpen, setIsAgentDropdownOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -63,12 +93,12 @@ export default function Chat({ queryInput, setQueryInput }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card mx-auto w-full max-w-4xl border-x border-border shadow-sm">
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-8 scroll-smooth">
+    <div className="flex flex-col h-full bg-transparent mx-auto w-full max-w-4xl border-x border-white/[0.05] shadow-2xl relative z-10">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-8 scroll-smooth relative z-10">
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-4 max-w-full animate-in slide-in-from-bottom-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 border ${
-              m.role === 'user' ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-foreground border-border'
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
+              m.role === 'user' ? 'bg-primary text-white border-primary shadow-primary/20' : 'glass-panel text-foreground border-white/10'
             }`}>
               {m.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
             </div>
@@ -76,7 +106,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             <div className={`flex flex-col max-w-[85%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === 'user' 
-                  ? 'bg-secondary text-foreground px-4 py-3 rounded-lg border border-border' 
+                  ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] px-4 py-3 rounded-2xl rounded-tr-sm border border-white/10' 
                   : 'text-foreground pt-1.5'
               }`}>
                 {m.content}
@@ -147,12 +177,12 @@ export default function Chat({ queryInput, setQueryInput }) {
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      <div className="p-6 border-t border-border bg-card">
+      <div className="p-6 border-t border-white/[0.05] glass-panel rounded-t-3xl mx-4 mb-4 mt-auto shrink-0 relative z-50">
         <div className="flex flex-wrap gap-2 mb-4">
           {['What is the remote work policy?', 'Summarize the NDA', 'How to claim expenses?'].map(q => (
             <button 
               key={q} 
-              className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 border border-border rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="px-4 py-2 glass-panel glass-panel-hover rounded-full text-xs font-bold text-slate-300 hover:text-white transition-all shadow-lg"
               onClick={() => { setQueryInput(q); }}
             >
               {q}
@@ -160,25 +190,99 @@ export default function Chat({ queryInput, setQueryInput }) {
           ))}
         </div>
         
-        <div className="flex items-center gap-2 mb-3">
-          <Cpu className="w-4 h-4 text-primary" />
-          <select 
-            className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer hover:bg-secondary/50 transition-colors"
-            value={targetAgent}
-            onChange={(e) => setTargetAgent(e.target.value)}
+        <div className="relative mb-3 flex items-center z-50">
+          <button 
+            className="flex items-center justify-between w-[320px] px-4 py-3 glass-panel glass-panel-hover rounded-xl text-left transition-all group"
+            onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
             disabled={typing}
           >
-            <option value="auto">🤖 Auto-Detect Agent</option>
-            <option value="hr">👥 HR Agent</option>
-            <option value="legal">⚖️ Legal Agent</option>
-            <option value="finance">💰 Finance Agent</option>
-            <option value="it">💻 IT Support Agent</option>
-          </select>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center border border-white/10 shadow-inner ${AGENTS.find(a => a.id === targetAgent)?.bg || 'bg-white/10'} ${AGENTS.find(a => a.id === targetAgent)?.color || 'text-white'}`}>
+                {(() => { const Icon = AGENTS.find(a => a.id === targetAgent)?.icon || Sparkles; return <Icon className="w-5 h-5" /> })()}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-white uppercase tracking-wider">{AGENTS.find(a => a.id === targetAgent)?.name || 'Auto-Detect Router'}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-bold text-slate-300">{AGENTS.find(a => a.id === targetAgent)?.provider || 'Enterprise Edge'}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-semibold mt-0.5">{AGENTS.find(a => a.id === targetAgent)?.desc || 'Dynamically routes query to the best expert'}</div>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isAgentDropdownOpen ? 'rotate-180 text-white' : 'group-hover:text-white'}`} />
+          </button>
+
+          <AnimatePresence>
+            {isAgentDropdownOpen && (
+              <>
+                {/* Backdrop overlay for focus */}
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+                  onClick={() => setIsAgentDropdownOpen(false)}
+                />
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="absolute bottom-full mb-4 left-0 w-[480px] bg-[#0f1525] border border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 overflow-hidden"
+                >
+                  <div className="px-4 py-3 mb-1 border-b border-white/5 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Server className="w-3.5 h-3.5" /> Execution Environment
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-500 uppercase">Provider / Latency</div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pb-1">
+                    {AGENTS.map(agent => (
+                      <div
+                        key={agent.id}
+                        className={`flex items-start gap-4 w-full p-3.5 rounded-xl text-left transition-all cursor-pointer relative overflow-hidden group ${targetAgent === agent.id ? 'bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}
+                        onClick={() => { setTargetAgent(agent.id); setIsAgentDropdownOpen(false); }}
+                      >
+                        {targetAgent === agent.id && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-[0_0_10px_rgba(139,92,246,0.8)]"></div>
+                        )}
+                        <div className={`w-10 h-10 rounded-lg flex shrink-0 items-center justify-center border border-white/10 ${agent.bg} ${agent.color}`}>
+                          <agent.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-white">{agent.name}</span>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest ${targetAgent === agent.id ? 'bg-primary/20 text-primary-foreground' : 'bg-white/10 text-slate-300'}`}>
+                                {agent.tag}
+                              </span>
+                            </div>
+                            {targetAgent === agent.id && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </div>
+                          
+                          <div className="text-xs text-slate-400 font-medium leading-relaxed mb-3 truncate">{agent.desc}</div>
+                          
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-black/20 p-2 rounded-lg border border-white/5">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Cpu className="w-3.5 h-3.5 text-slate-400 shrink-0" /> 
+                              <span className="truncate">{agent.provider} ({agent.model})</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Zap className="w-3.5 h-3.5 text-amber-400" /> {agent.latency}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="flex gap-3 items-end relative">
           <textarea 
-            className="flex-1 min-h-[52px] max-h-32 p-3.5 pr-12 bg-background border border-border rounded-lg text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow shadow-sm" 
+            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 glass-panel bg-black/20 text-white placeholder:text-slate-500 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow shadow-xl" 
             placeholder="Ask a question about enterprise documents..." 
             value={queryInput}
             onChange={e => setQueryInput(e.target.value)}
@@ -186,7 +290,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             rows="1"
           />
           <button 
-            className="absolute right-3 bottom-2 w-9 h-9 bg-primary hover:bg-primary/90 text-primary-foreground border-none rounded-md flex items-center justify-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
+            className="absolute right-3 bottom-3 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]" 
             onClick={sendQuery} 
             disabled={!queryInput.trim() || typing}
           >
