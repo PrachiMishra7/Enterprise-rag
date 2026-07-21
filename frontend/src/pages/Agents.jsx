@@ -8,13 +8,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const INITIAL_NODES = [
-  { id: 'master', type: 'core', name: 'Master Router', x: 80, y: 240, icon: Server, color: 'text-blue-400', bg: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-400/50', shadow: 'shadow-blue-500/20', out: ['hr', 'legal', 'finance', 'it'], model: 'llama-3.1-70b', temperature: 0.0, maxTokens: 100 },
-  { id: 'hr', type: 'agent', name: 'HR Agent', x: 420, y: 50, icon: Users, color: 'text-emerald-400', bg: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-400/50', shadow: 'shadow-emerald-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.2, maxTokens: 512 },
-  { id: 'legal', type: 'agent', name: 'Legal Agent', x: 420, y: 170, icon: Scale, color: 'text-purple-400', bg: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-400/50', shadow: 'shadow-purple-500/20', out: ['guard'], model: 'llama-3.1-70b', temperature: 0.1, maxTokens: 1024 },
-  { id: 'finance', type: 'agent', name: 'Finance Agent', x: 420, y: 290, icon: Landmark, color: 'text-amber-400', bg: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-400/50', shadow: 'shadow-amber-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.2, maxTokens: 512 },
-  { id: 'it', type: 'agent', name: 'IT Helpdesk', x: 420, y: 410, icon: Monitor, color: 'text-orange-400', bg: 'from-orange-500/20 to-orange-600/5', border: 'border-orange-400/50', shadow: 'shadow-orange-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.4, maxTokens: 256 },
-  { id: 'guard', type: 'core', name: 'Hallucination Guard', x: 760, y: 240, icon: ShieldCheck, color: 'text-rose-400', bg: 'from-rose-500/20 to-rose-600/5', border: 'border-rose-400/50', shadow: 'shadow-rose-500/20', out: ['output'], model: 'guard-rail-v2', temperature: 0.0, maxTokens: 50 },
-  { id: 'output', type: 'end', name: 'Final Response', x: 1080, y: 240, icon: Bot, color: 'text-slate-900 dark:text-white', bg: 'from-white/20 to-white/5', border: 'border-white/30', shadow: 'shadow-white/10', out: [], model: 'system', temperature: 0.2, maxTokens: 1000 },
+  { id: 'master', type: 'core', name: 'Master Router', x: 40, y: 260, icon: Server, color: 'text-blue-400', bg: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-400/50', shadow: 'shadow-blue-500/20', out: ['hr', 'legal', 'finance', 'it'], model: 'llama-3.1-70b', temperature: 0.0, maxTokens: 100 },
+  { id: 'hr', type: 'agent', name: 'HR Agent', x: 380, y: 20, icon: Users, color: 'text-emerald-400', bg: 'from-emerald-500/20 to-emerald-600/5', border: 'border-emerald-400/50', shadow: 'shadow-emerald-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.2, maxTokens: 512 },
+  { id: 'legal', type: 'agent', name: 'Legal Agent', x: 380, y: 180, icon: Scale, color: 'text-purple-400', bg: 'from-purple-500/20 to-purple-600/5', border: 'border-purple-400/50', shadow: 'shadow-purple-500/20', out: ['guard'], model: 'llama-3.1-70b', temperature: 0.1, maxTokens: 1024 },
+  { id: 'finance', type: 'agent', name: 'Finance Agent', x: 380, y: 340, icon: Landmark, color: 'text-amber-400', bg: 'from-amber-500/20 to-amber-600/5', border: 'border-amber-400/50', shadow: 'shadow-amber-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.2, maxTokens: 512 },
+  { id: 'it', type: 'agent', name: 'IT Helpdesk', x: 380, y: 500, icon: Monitor, color: 'text-orange-400', bg: 'from-orange-500/20 to-orange-600/5', border: 'border-orange-400/50', shadow: 'shadow-orange-500/20', out: ['guard'], model: 'llama-3.1-8b', temperature: 0.4, maxTokens: 256 },
+  { id: 'guard', type: 'core', name: 'Hallucination Guard', x: 720, y: 260, icon: ShieldCheck, color: 'text-rose-400', bg: 'from-rose-500/20 to-rose-600/5', border: 'border-rose-400/50', shadow: 'shadow-rose-500/20', out: ['output'], model: 'guard-rail-v2', temperature: 0.0, maxTokens: 50 },
+  { id: 'output', type: 'end', name: 'Final Response', x: 1060, y: 260, icon: Bot, color: 'text-slate-900 dark:text-white', bg: 'from-white/20 to-white/5', border: 'border-white/30', shadow: 'shadow-white/10', out: [], model: 'system', temperature: 0.2, maxTokens: 1000 },
 ];
 
 function BezierCurve({ startX, startY, endX, endY, color }) {
@@ -135,8 +135,8 @@ export default function Agents({ navigateTo }) {
       id,
       type: 'agent',
       name: `Custom Agent ${nodes.filter(n => n.type === 'agent').length + 1}`,
-      x: 420,
-      y: 200 + (nodes.filter(n => n.type === 'agent').length * 40) % 200,
+      x: 380,
+      y: 100 + (nodes.filter(n => n.type === 'agent').length * 160) % 600,
       icon: Bot,
       color: 'text-indigo-400',
       bg: 'from-indigo-500/20 to-indigo-600/5',

@@ -276,23 +276,13 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
             return content.decode("latin-1", errors="replace")
 
     def _split_into_chunks(self, text: str) -> List[str]:
-        # Split by paragraphs first, then by size
-        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
-        chunks = []
-        current_chunk = ""
-
-        for para in paragraphs:
-            if len(current_chunk) + len(para) < self.chunk_size:
-                current_chunk += ("\n\n" if current_chunk else "") + para
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk)
-                current_chunk = para
-
-        if current_chunk:
-            chunks.append(current_chunk)
-
-        return chunks if chunks else [text[:self.chunk_size]]
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        return text_splitter.split_text(text)
 
     def list_documents(self, db: Session, role: str) -> List[dict]:
         allowed_access = ROLE_ACCESS_MAP.get(role, ["employee"])

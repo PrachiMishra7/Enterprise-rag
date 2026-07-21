@@ -113,14 +113,14 @@ class HybridRetriever:
 
         allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
         
-        # LangChain Chroma doesn't natively support "IN" queries cleanly with basic filtering 
-        # for multiple possible access levels in the open-source version, so we retrieve more
-        # and post-filter, or build a complex filter. Post-filtering is safer for now.
-        
-        results = self.vectorstore.similarity_search_with_relevance_scores(query, k=top_k * 3)
+        # We use MMR for better diversity of context chunks
+        # Langchain Chroma MMR returns documents without scores by default in this setup, 
+        # so we fetch docs and give them a pseudo-score of 1.0 or implement a custom scoring.
+        # MMR helps prevent the context from being flooded with identical chunks.
+        results = self.vectorstore.max_marginal_relevance_search(query, k=top_k * 3, fetch_k=top_k * 6)
         
         filtered_results = []
-        for doc, score in results:
+        for doc in results:
             if doc.metadata.get("access_level") in allowed_access:
                 filtered_results.append({
                     "id": doc.metadata.get("id"),
@@ -130,7 +130,7 @@ class HybridRetriever:
                     "access_level": doc.metadata.get("access_level"),
                     "text": doc.page_content,
                     "chunk_index": doc.metadata.get("chunk_index"),
-                    "score": score
+                    "score": 0.0 # MMR does not return similarity score
                 })
                 
                 if len(filtered_results) >= top_k:

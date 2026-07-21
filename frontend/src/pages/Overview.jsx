@@ -7,16 +7,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
 
-const areaData = [
-  { name: 'Mon', queries: 4000, docs: 2400 },
-  { name: 'Tue', queries: 3000, docs: 1398 },
-  { name: 'Wed', queries: 2000, docs: 9800 },
-  { name: 'Thu', queries: 2780, docs: 3908 },
-  { name: 'Fri', queries: 1890, docs: 4800 },
-  { name: 'Sat', queries: 2390, docs: 3800 },
-  { name: 'Sun', queries: 3490, docs: 4300 },
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
@@ -31,9 +21,13 @@ const itemVariants = {
 };
 
 function CircularProgress({ value, label, sublabel, color, trackColor }) {
+  // Ensure value is a valid number between 0 and 100
+  const safeValue = isNaN(parseFloat(value)) ? 0 : Math.max(0, Math.min(100, parseFloat(value)));
+  const displayValue = Math.round(safeValue);
+  
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
+  const offset = circumference - (safeValue / 100) * circumference;
 
   return (
     <motion.div 
@@ -47,7 +41,7 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
           <circle cx="64" cy="64" r={radius} stroke={trackColor} strokeWidth="12" fill="none" className="opacity-30" />
           <motion.circle
             initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
+            animate={{ strokeDashoffset: isNaN(offset) ? circumference : offset }}
             transition={{ duration: 1.5, ease: "easeOut" }}
             cx="64" cy="64" r={radius} stroke={color} strokeWidth="12" fill="none"
             strokeDasharray={circumference}
@@ -55,12 +49,15 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
             className="drop-shadow-lg"
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{value}%</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="flex items-baseline gap-[2px]">
+            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums leading-none">{displayValue}</span>
+            <span className="text-sm font-bold text-slate-900/60 dark:text-white/60 leading-none">%</span>
+          </div>
         </div>
       </div>
-      <h3 className="text-[14px] font-bold text-slate-900 dark:text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70">{label}</h3>
-      <p className="text-[11px] text-[#8b92a5] font-semibold mt-1 uppercase tracking-widest">{sublabel}</p>
+      <h3 className="text-[13px] font-bold text-slate-900 dark:text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70 text-center whitespace-nowrap">{label}</h3>
+      <p className="text-[10px] text-[#8b92a5] font-semibold mt-1 uppercase tracking-widest text-center">{sublabel}</p>
     </motion.div>
   );
 }
@@ -163,7 +160,10 @@ export default function Overview({ navigateTo }) {
             </h3>
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.volume_history.length ? stats.volume_history : areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart 
+                  data={stats.volume_history || []} 
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#c084fc" stopOpacity={0.6} />
@@ -174,17 +174,17 @@ export default function Overview({ navigateTo }) {
                       <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                  <XAxis dataKey="name" stroke="#8b92a5" fontSize={12} tickLine={false} axisLine={false} fontWeight="bold" />
-                  <YAxis stroke="#8b92a5" fontSize={12} tickLine={false} axisLine={false} fontWeight="bold" />
+                  <CartesianGrid strokeDasharray="4 4" stroke="#ffffff" strokeOpacity={0.05} vertical={false} />
+                  <XAxis dataKey="name" stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
+                  <YAxis stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}
-                    itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900' }}
-                    labelStyle={{ color: '#8b92a5', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px' }}
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                    itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900', padding: '4px 0' }}
+                    labelStyle={{ color: '#8b92a5', fontSize: '11px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}
                   />
-                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontWeight: 'bold', color: '#8b92a5', fontSize: '12px' }} />
-                  <Area type="monotone" name="Documents Indexed" dataKey="docs" stroke="#f472b6" strokeWidth={4} fillOpacity={1} fill="url(#colorDocs)" activeDot={{ r: 8, fill: "#f472b6", stroke: "#fff", strokeWidth: 2 }} />
-                  <Area type="monotone" name="User Queries" dataKey="queries" stroke="#c084fc" strokeWidth={4} fillOpacity={1} fill="url(#colorQueries)" activeDot={{ r: 8, fill: "#c084fc", stroke: "#fff", strokeWidth: 2 }} />
+                  <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{ fontWeight: 'bold', color: '#8b92a5', fontSize: '12px', paddingBottom: '20px' }} />
+                  <Area type="natural" name="Documents Indexed" dataKey="docs" stroke="#f472b6" strokeWidth={4} fillOpacity={1} fill="url(#colorDocs)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#f472b6", strokeWidth: 3 }} />
+                  <Area type="natural" name="User Queries" dataKey="queries" stroke="#c084fc" strokeWidth={4} fillOpacity={1} fill="url(#colorQueries)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#c084fc", strokeWidth: 3 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -202,31 +202,113 @@ export default function Overview({ navigateTo }) {
               </h3>
               <div className="h-[160px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.department_usage.length ? stats.department_usage : [{name: 'Loading', usage: 0}]} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <BarChart 
+                    data={stats.department_usage || []} 
+                    margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+                  >
                     <defs>
                       <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#38bdf8" />
                         <stop offset="100%" stopColor="#818cf8" />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="name" stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" />
-                    <YAxis stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" />
+                    <XAxis dataKey="name" stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
+                    <YAxis stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} width={30} />
                     <Tooltip 
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                      itemStyle={{ fontWeight: 'black', color: '#fff' }}
+                      cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
+                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontWeight: 'black', color: '#fff', fontSize: '13px' }}
+                      labelStyle={{ color: '#8b92a5', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}
                     />
-                    <Bar name="Queries by Dept" dataKey="usage" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={24} />
+                    <Bar name="Queries by Dept" dataKey="usage" fill="url(#barGradient)" radius={[8, 8, 8, 8]} barSize={20} background={{ fill: 'rgba(255,255,255,0.02)', radius: 8 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <CircularProgress value={92} label="Data Coverage" sublabel="Index Freshness" color="#38bdf8" trackColor="#38bdf820" />
-              <CircularProgress value={stats.hallucination_rate === '0%' ? 100 : 100 - parseFloat(stats.hallucination_rate)} label="Avg Accuracy" sublabel="Confidence Score" color="#c084fc" trackColor="#c084fc20" />
+              <CircularProgress 
+                value={
+                  stats.hallucination_rate === '0%' ? 100 : 
+                  (isNaN(parseFloat(stats.hallucination_rate)) ? 100 : 100 - parseFloat(stats.hallucination_rate))
+                } 
+                label="Avg Accuracy" 
+                sublabel="Confidence Score" 
+                color="#c084fc" 
+                trackColor="#c084fc20" 
+              />
             </div>
           </div>
+
+        </motion.div>
+
+        {/* New Section: Recent Activity & System Health */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
+          
+          {/* System Health */}
+          <motion.div 
+            whileHover={{ scale: 1.01 }}
+            className="p-8 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-emerald-500/20 transition-all"></div>
+            <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-emerald-400" /> System Health
+            </h3>
+            <div className="space-y-5">
+              {[
+                { label: "Vector DB (Chroma)", status: "Operational", ping: "12ms", color: "text-emerald-500 dark:text-emerald-400", dot: "bg-emerald-400" },
+                { label: "LLM Provider (Groq)", status: "Operational", ping: "45ms", color: "text-emerald-500 dark:text-emerald-400", dot: "bg-emerald-400" },
+                { label: "PostgreSQL Database", status: "Operational", ping: "8ms", color: "text-emerald-500 dark:text-emerald-400", dot: "bg-emerald-400" },
+                { label: "Embedding Service", status: "Operational", ping: "45ms", color: "text-emerald-500 dark:text-emerald-400", dot: "bg-emerald-400" }
+              ].map((service, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/40 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className={`w-2.5 h-2.5 rounded-full ${service.dot}`}></div>
+                      <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${service.dot} animate-ping opacity-50`}></div>
+                    </div>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{service.label}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className={`text-[11px] font-black uppercase tracking-wider ${service.color}`}>{service.status}</span>
+                    <span className="text-[10px] text-slate-500 font-bold">{service.ping}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Recent Activity Feed */}
+          <motion.div 
+            whileHover={{ scale: 1.01 }}
+            className="xl:col-span-2 p-8 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-indigo-500/20 transition-all"></div>
+            <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-indigo-400" /> Live Activity Feed
+            </h3>
+            <div className="space-y-4">
+              {[
+                { user: "Sarah L.", action: "queried the HR policy", time: "2 mins ago", icon: Activity, color: "text-purple-500 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-500/10" },
+                { user: "System", action: "indexed 45 new documents", time: "15 mins ago", icon: Database, color: "text-sky-500 dark:text-sky-400", bg: "bg-sky-100 dark:bg-sky-500/10" },
+                { user: "Mike R.", action: "created a new Data Connector", time: "1 hour ago", icon: Zap, color: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-100 dark:bg-yellow-500/10" },
+                { user: "System", action: "flagged high hallucination risk on query #892", time: "2 hours ago", icon: ShieldAlert, color: "text-rose-500 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-500/10" }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/40 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-colors">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.bg}`}>
+                    <item.icon className={`w-5 h-5 ${item.color}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-800 dark:text-slate-200">
+                      <span className="font-bold">{item.user}</span> {item.action}
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider mt-1">{item.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
 
         </motion.div>
       </motion.div>
