@@ -79,17 +79,23 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
                   whileHover={{ scale: 1.02, x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   key={item.id}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all group relative overflow-hidden ${
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all group relative z-10 ${
                     isActive 
-                      ? 'text-primary dark:text-white bg-primary/10' 
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-100 dark:bg-white/5'
+                      ? 'text-white' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                   }`}
                   onClick={() => setPage(item.id)}
                 >
                   {isActive && (
-                    <motion.div layoutId="activeTab" className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-md shadow-[0_0_10px_#3b82f6]"></motion.div>
+                    <motion.div 
+                      layoutId="activeTab" 
+                      className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-xl -z-10 shadow-[0_0_15px_rgba(139,92,246,0.5)] border border-white/20"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    ></motion.div>
                   )}
-                  <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary/70'}`} />
+                  <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'group-hover:text-primary/70'}`} />
                   <div>{item.label}</div>
                 </motion.div>
               );

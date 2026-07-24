@@ -69,6 +69,9 @@ class HybridRetriever:
         self._initialized = True
 
     def add_documents(self, new_chunks: List[dict], metadata: dict):
+        if hasattr(self, '_cache'):
+            self._cache.clear()
+            
         if not self.vectorstore:
             # We don't have a vector store yet, just mark as not initialized
             # to rebuild the next time retrieve is called.
@@ -105,6 +108,13 @@ class HybridRetriever:
         self.vectorstore.add_documents(documents)
 
     def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
+        if not hasattr(self, '_cache'):
+            self._cache = {}
+            
+        cache_key = f"{query}_{user_role}_{top_k}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
         if not self._initialized:
             self._build_index(db)
 
@@ -136,4 +146,5 @@ class HybridRetriever:
                 if len(filtered_results) >= top_k:
                     break
                     
+        self._cache[cache_key] = filtered_results
         return filtered_results

@@ -108,8 +108,15 @@ export default function Chat({ queryInput, setQueryInput }) {
   return (
     <div className="flex flex-col h-full bg-transparent mx-auto w-full max-w-4xl border-x border-white/[0.05] shadow-2xl relative z-10">
       <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-8 scroll-smooth relative z-10">
+        <AnimatePresence>
         {messages.map((m, i) => (
-          <div key={i} className={`flex gap-4 max-w-full animate-in slide-in-from-bottom-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 250, damping: 20 }}
+            key={i} 
+            className={`flex gap-4 max-w-full ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
+          >
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
               m.role === 'user' ? 'bg-primary text-slate-900 dark:text-white border-primary shadow-primary/20' : 'glass-panel text-foreground border-slate-200 dark:border-white/10'
             }`}>
@@ -190,8 +197,9 @@ export default function Chat({ queryInput, setQueryInput }) {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
+        </AnimatePresence>
 
         {typing && (
           <div className="flex gap-4 animate-in slide-in-from-bottom-2">
