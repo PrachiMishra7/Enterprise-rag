@@ -36,6 +36,7 @@ class Citation(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    query_id: str
     answer: str
     agent: str
     confidence_score: float

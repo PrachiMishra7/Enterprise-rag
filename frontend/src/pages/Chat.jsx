@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AGENTS = [
@@ -72,7 +72,8 @@ export default function Chat({ queryInput, setQueryInput }) {
         agent: data.agent,
         confidence: data.confidence_score,
         hallucination: data.hallucination_detected,
-        citations: data.citations || []
+        citations: data.citations || [],
+        query_id: data.query_id
       }]);
     } catch (e) {
       setMessages([...newMessages, {
@@ -89,6 +90,18 @@ export default function Chat({ queryInput, setQueryInput }) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendQuery();
+    }
+  };
+
+  const handleFeedback = async (queryId, value, index) => {
+    if (!queryId) return;
+    try {
+      await apiCall('POST', `/query/${queryId}/feedback`, { feedback: value }, false, token);
+      const newMessages = [...messages];
+      newMessages[index].feedback = value;
+      setMessages(newMessages);
+    } catch (e) {
+      console.error('Failed to submit feedback', e);
     }
   };
 
@@ -154,6 +167,26 @@ export default function Chat({ queryInput, setQueryInput }) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {m.role === 'ai' && m.query_id && (
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full">
+                  <span className="text-[10px] text-muted-foreground font-bold uppercase mr-2">Was this helpful?</span>
+                  <button 
+                    onClick={() => handleFeedback(m.query_id, 1, i)}
+                    className={`p-1.5 rounded-lg transition-colors ${m.feedback === 1 ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-emerald-500'}`}
+                    disabled={m.feedback !== undefined}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleFeedback(m.query_id, -1, i)}
+                    className={`p-1.5 rounded-lg transition-colors ${m.feedback === -1 ? 'bg-rose-500/20 text-rose-500' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-rose-500'}`}
+                    disabled={m.feedback !== undefined}
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>

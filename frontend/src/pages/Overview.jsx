@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Activity, ShieldAlert, Database, Zap } from 'lucide-react';
+import { ArrowRight, Activity, ShieldAlert, Database, Zap, ThumbsUp } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
@@ -25,25 +25,25 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
   const safeValue = isNaN(parseFloat(value)) ? 0 : Math.max(0, Math.min(100, parseFloat(value)));
   const displayValue = Math.round(safeValue);
   
-  const radius = 45;
+  const radius = 35;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (safeValue / 100) * circumference;
 
   return (
     <motion.div 
       whileHover={{ y: -5, boxShadow: `0 20px 40px ${color}20` }}
-      className="flex flex-col items-center justify-center p-6 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group transition-all"
+      className="flex flex-col items-center justify-center p-5 glass-panel glass-panel-hover rounded-3xl relative group transition-all"
     >
-      <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[50px] -mr-10 -mt-10 pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity`} style={{ backgroundColor: color }}></div>
+      <div className={`absolute top-0 right-0 w-28 h-28 rounded-full blur-[40px] -mr-8 -mt-8 pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity`} style={{ backgroundColor: color }}></div>
       
-      <div className="relative w-32 h-32 flex items-center justify-center mb-4 drop-shadow-2xl">
+      <div className="relative w-28 h-28 flex items-center justify-center mb-4 drop-shadow-2xl">
         <svg className="w-full h-full transform -rotate-90">
-          <circle cx="64" cy="64" r={radius} stroke={trackColor} strokeWidth="12" fill="none" className="opacity-30" />
+          <circle cx="56" cy="56" r={radius} stroke={trackColor} strokeWidth="10" fill="none" className="opacity-30" />
           <motion.circle
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: isNaN(offset) ? circumference : offset }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            cx="64" cy="64" r={radius} stroke={color} strokeWidth="12" fill="none"
+            cx="56" cy="56" r={radius} stroke={color} strokeWidth="10" fill="none"
             strokeDasharray={circumference}
             strokeLinecap="round"
             className="drop-shadow-lg"
@@ -51,13 +51,13 @@ function CircularProgress({ value, label, sublabel, color, trackColor }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="flex items-baseline gap-[2px]">
-            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums leading-none">{displayValue}</span>
-            <span className="text-sm font-bold text-slate-900/60 dark:text-white/60 leading-none">%</span>
+            <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums leading-none">{displayValue}</span>
+            <span className="text-xs font-bold text-slate-900/60 dark:text-white/60 leading-none">%</span>
           </div>
         </div>
       </div>
-      <h3 className="text-[13px] font-bold text-slate-900 dark:text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70 text-center whitespace-nowrap">{label}</h3>
-      <p className="text-[10px] text-[#8b92a5] font-semibold mt-1 uppercase tracking-widest text-center">{sublabel}</p>
+      <h3 className="text-xs font-bold text-slate-900 dark:text-white tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-white/70 text-center">{label}</h3>
+      <p className="text-[9px] text-[#8b92a5] font-semibold mt-1 uppercase tracking-widest text-center">{sublabel}</p>
     </motion.div>
   );
 }
@@ -69,6 +69,10 @@ export default function Overview({ navigateTo }) {
     query_count: 0,
     hallucination_rate: "0%",
     active_agents: 8,
+    total_tokens: 0,
+    avg_relevance: "0%",
+    avg_faithfulness: "0%",
+    satisfaction_rate: "N/A",
     department_usage: [],
     volume_history: []
   });
@@ -123,9 +127,9 @@ export default function Overview({ navigateTo }) {
         <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { label: "Queries Processed", value: stats.query_count.toLocaleString(), icon: Activity, color: "#c084fc", bg: "from-purple-600/20 to-transparent" },
-            { label: "Active Agents", value: stats.active_agents, icon: Zap, color: "#facc15", bg: "from-yellow-500/20 to-transparent" },
+            { label: "Token Usage", value: stats.total_tokens ? stats.total_tokens.toLocaleString() : "0", icon: Zap, color: "#facc15", bg: "from-yellow-500/20 to-transparent" },
             { label: "Total Documents", value: stats.doc_count.toLocaleString(), icon: Database, color: "#38bdf8", bg: "from-sky-500/20 to-transparent" },
-            { label: "Hallucination Risk", value: stats.hallucination_rate, icon: ShieldAlert, color: "#34d399", bg: "from-emerald-500/20 to-transparent" }
+            { label: "User Satisfaction", value: stats.satisfaction_rate, icon: ThumbsUp, color: "#34d399", bg: "from-emerald-500/20 to-transparent" }
           ].map((stat, i) => (
             <motion.div 
               key={i} 
@@ -152,40 +156,46 @@ export default function Overview({ navigateTo }) {
           {/* Main Area Chart */}
           <motion.div 
             whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
-            className="xl:col-span-2 p-8 glass-panel rounded-3xl relative overflow-hidden group"
+            className="xl:col-span-2 p-8 glass-panel rounded-3xl relative group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-purple-500/20 transition-all"></div>
-            <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-8 flex items-center gap-2">
+            <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">
               <Activity className="w-4 h-4 text-purple-400" /> Interaction Volume (7 Days)
             </h3>
-            <div className="h-[350px] w-full">
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={stats.volume_history || []} 
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#c084fc" stopOpacity={0.6} />
-                      <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorDocs" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f472b6" stopOpacity={0.6} />
-                      <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="4 4" stroke="#ffffff" strokeOpacity={0.05} vertical={false} />
-                  <XAxis dataKey="name" stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
-                  <YAxis stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-                    itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900', padding: '4px 0' }}
-                    labelStyle={{ color: '#8b92a5', fontSize: '11px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}
-                  />
-                  <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{ fontWeight: 'bold', color: '#8b92a5', fontSize: '12px', paddingBottom: '20px' }} />
-                  <Area type="natural" name="Documents Indexed" dataKey="docs" stroke="#f472b6" strokeWidth={4} fillOpacity={1} fill="url(#colorDocs)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#f472b6", strokeWidth: 3 }} />
-                  <Area type="natural" name="User Queries" dataKey="queries" stroke="#c084fc" strokeWidth={4} fillOpacity={1} fill="url(#colorQueries)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#c084fc", strokeWidth: 3 }} />
-                </AreaChart>
+                {stats.volume_history && stats.volume_history.length > 0 ? (
+                  <AreaChart 
+                    data={stats.volume_history} 
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorQueries" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#c084fc" stopOpacity={0.6} />
+                        <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorDocs" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f472b6" stopOpacity={0.6} />
+                        <stop offset="95%" stopColor="#f472b6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#ffffff" strokeOpacity={0.05} vertical={false} />
+                    <XAxis dataKey="name" stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
+                    <YAxis stroke="#8b92a5" fontSize={11} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: '900', padding: '4px 0' }}
+                      labelStyle={{ color: '#8b92a5', fontSize: '11px', fontWeight: 'black', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}
+                    />
+                    <Legend verticalAlign="top" height={40} iconType="circle" wrapperStyle={{ fontWeight: 'bold', color: '#8b92a5', fontSize: '12px', paddingBottom: '20px' }} />
+                    <Area type="monotoneX" name="Documents Indexed" dataKey="docs" stroke="#f472b6" strokeWidth={4} fillOpacity={1} fill="url(#colorDocs)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#f472b6", strokeWidth: 3 }} />
+                    <Area type="monotoneX" name="User Queries" dataKey="queries" stroke="#c084fc" strokeWidth={4} fillOpacity={1} fill="url(#colorQueries)" activeDot={{ r: 6, fill: "#0f172a", stroke: "#c084fc", strokeWidth: 3 }} />
+                  </AreaChart>
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full text-slate-500 font-bold text-sm">
+                    No data available
+                  </div>
+                )}
               </ResponsiveContainer>
             </div>
           </motion.div>
@@ -194,47 +204,56 @@ export default function Overview({ navigateTo }) {
           <div className="flex flex-col gap-6">
             <motion.div 
               whileHover={{ scale: 1.02 }}
-              className="p-8 glass-panel glass-panel-hover rounded-3xl flex-1 relative overflow-hidden group"
+              className="p-8 glass-panel glass-panel-hover rounded-3xl flex-1 relative group"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-sky-500/10 rounded-full blur-[60px] -mr-24 -mt-24 pointer-events-none group-hover:bg-sky-500/20 transition-all"></div>
-              <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Database className="w-4 h-4 text-sky-400" /> Department Usage
               </h3>
-              <div className="h-[160px] w-full">
+              <div className="h-[140px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={stats.department_usage || []} 
-                    margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#38bdf8" />
-                        <stop offset="100%" stopColor="#818cf8" />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
-                    <YAxis stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} width={30} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
-                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-                      itemStyle={{ fontWeight: 'black', color: '#fff', fontSize: '13px' }}
-                      labelStyle={{ color: '#8b92a5', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}
-                    />
-                    <Bar name="Queries by Dept" dataKey="usage" fill="url(#barGradient)" radius={[8, 8, 8, 8]} barSize={20} background={{ fill: 'rgba(255,255,255,0.02)', radius: 8 }} />
-                  </BarChart>
+                  {stats.department_usage && stats.department_usage.length > 0 ? (
+                    <BarChart 
+                      data={stats.department_usage} 
+                      margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#38bdf8" />
+                          <stop offset="100%" stopColor="#818cf8" />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dy={10} />
+                      <YAxis stroke="#8b92a5" fontSize={10} tickLine={false} axisLine={false} fontWeight="bold" dx={-10} width={30} />
+                      <Tooltip 
+                        cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
+                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                        itemStyle={{ fontWeight: 'black', color: '#fff', fontSize: '13px' }}
+                        labelStyle={{ color: '#8b92a5', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}
+                      />
+                      <Bar name="Queries by Dept" dataKey="usage" fill="url(#barGradient)" radius={[8, 8, 8, 8]} barSize={20} background={{ fill: 'rgba(255,255,255,0.02)', radius: 8 }} />
+                    </BarChart>
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full text-slate-500 font-bold text-sm">
+                      No data available
+                    </div>
+                  )}
                 </ResponsiveContainer>
               </div>
             </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <CircularProgress value={92} label="Data Coverage" sublabel="Index Freshness" color="#38bdf8" trackColor="#38bdf820" />
               <CircularProgress 
-                value={
-                  stats.hallucination_rate === '0%' ? 100 : 
-                  (isNaN(parseFloat(stats.hallucination_rate)) ? 100 : 100 - parseFloat(stats.hallucination_rate))
-                } 
-                label="Avg Accuracy" 
-                sublabel="Confidence Score" 
+                value={parseFloat(stats.avg_relevance) || 0} 
+                label="Context Relevance" 
+                sublabel="Avg Match Score" 
+                color="#38bdf8" 
+                trackColor="#38bdf820" 
+              />
+              <CircularProgress 
+                value={parseFloat(stats.avg_faithfulness) || 0} 
+                label="Faithfulness" 
+                sublabel="Groundedness Score" 
                 color="#c084fc" 
                 trackColor="#c084fc20" 
               />
@@ -249,7 +268,7 @@ export default function Overview({ navigateTo }) {
           {/* System Health */}
           <motion.div 
             whileHover={{ scale: 1.01 }}
-            className="p-8 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group"
+            className="p-8 glass-panel glass-panel-hover rounded-3xl relative group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-emerald-500/20 transition-all"></div>
             <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">
@@ -282,7 +301,7 @@ export default function Overview({ navigateTo }) {
           {/* Recent Activity Feed */}
           <motion.div 
             whileHover={{ scale: 1.01 }}
-            className="xl:col-span-2 p-8 glass-panel glass-panel-hover rounded-3xl relative overflow-hidden group"
+            className="xl:col-span-2 p-8 glass-panel glass-panel-hover rounded-3xl relative group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-indigo-500/20 transition-all"></div>
             <h3 className="text-[13px] font-black text-[#8b92a5] uppercase tracking-widest mb-6 flex items-center gap-2">

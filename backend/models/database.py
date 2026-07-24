@@ -57,6 +57,10 @@ class QueryLog(Base):
     agent = Column(String, default="general")
     confidence_score = Column(Integer, default=0) # Storing as 0-100 integer for simplicity
     hallucination_detected = Column(Boolean, default=False)
+    tokens_used = Column(Integer, default=0)
+    user_feedback = Column(Integer, default=0)
+    context_relevance_score = Column(Integer, default=0)
+    faithfulness_score = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")

@@ -24,6 +24,15 @@ async def get_analytics(current_user: dict = Depends(get_current_user), db: Sess
     
     hallucination_rate = f"{(hallucination_count / query_count * 100):.1f}%" if query_count > 0 else "0%"
     
+    total_tokens = db.query(func.sum(QueryLog.tokens_used)).scalar() or 0
+    avg_relevance = db.query(func.avg(QueryLog.context_relevance_score)).scalar() or 0
+    avg_faithfulness = db.query(func.avg(QueryLog.faithfulness_score)).scalar() or 0
+    
+    feedback_up = db.query(QueryLog).filter(QueryLog.user_feedback == 1).count()
+    feedback_down = db.query(QueryLog).filter(QueryLog.user_feedback == -1).count()
+    total_feedback = feedback_up + feedback_down
+    satisfaction_rate = f"{(feedback_up / total_feedback * 100):.1f}%" if total_feedback > 0 else "N/A"
+    
     volume_history = []
     today = datetime.utcnow().date()
     for i in range(6, -1, -1):
@@ -44,6 +53,10 @@ async def get_analytics(current_user: dict = Depends(get_current_user), db: Sess
         "query_count": query_count,
         "hallucination_rate": hallucination_rate,
         "active_agents": 8,
+        "total_tokens": total_tokens,
+        "avg_relevance": f"{avg_relevance:.1f}%" if avg_relevance else "0%",
+        "avg_faithfulness": f"{avg_faithfulness:.1f}%" if avg_faithfulness else "0%",
+        "satisfaction_rate": satisfaction_rate,
         "volume_history": volume_history,
         "department_usage": [
             {"name": "HR", "usage": hr_count},
