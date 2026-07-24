@@ -13,6 +13,7 @@ import Prompts from './pages/Prompts';
 import DataConnectors from './pages/DataConnectors';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
+import AITools from './pages/AITools';
 
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
       case 'documents': return <Documents documents={documents} loadDocuments={setDocuments} />;
       case 'upload': return <Upload showToast={showToast} loadDocuments={setDocuments} />;
       case 'agents': return <Agents navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
+      case 'tools': return <AITools />;
       case 'prompts': return <Prompts />;
       case 'connectors': return <DataConnectors />;
       case 'users': return <UserManagement />;

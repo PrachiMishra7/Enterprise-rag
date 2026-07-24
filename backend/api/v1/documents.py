@@ -86,8 +86,7 @@ async def summarize_document(
                 "temperature": 0.3,
                 "max_tokens": 400
             },
-            timeout=30,
-            verify=False
+            timeout=30
         )
         response.raise_for_status()
         summary = response.json()["choices"][0]["message"]["content"]

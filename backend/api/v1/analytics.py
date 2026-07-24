@@ -38,9 +38,10 @@ async def get_analytics(current_user: dict = Depends(get_current_user), db: Sess
     for i in range(6, -1, -1):
         day = today - timedelta(days=i)
         day_str = day.strftime("%a")
+        day_str_full = day.strftime("%Y-%m-%d")
         
-        q_count = db.query(QueryLog).filter(func.date(QueryLog.created_at) == day).count()
-        d_count = db.query(Document).filter(func.date(Document.uploaded_at) == day).count()
+        q_count = db.query(QueryLog).filter(func.date(QueryLog.created_at) == day_str_full).count()
+        d_count = db.query(Document).filter(func.date(Document.uploaded_at) == day_str_full).count()
         
         volume_history.append({
             "name": day_str,

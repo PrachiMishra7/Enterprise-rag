@@ -20,6 +20,7 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
       items: [
         { id: 'chat', icon: MessageSquare, label: 'Ask AI' },
         { id: 'agents', icon: Bot, label: 'AI Flow Builder' },
+        { id: 'tools', icon: TerminalSquare, label: 'AI Utilities' },
         { id: 'prompts', icon: TerminalSquare, label: 'Prompt Library' },
       ]
     },
