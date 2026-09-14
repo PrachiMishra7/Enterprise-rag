@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AGENTS = [
@@ -37,7 +37,7 @@ export default function Chat({ queryInput, setQueryInput }) {
   const [targetAgent, setTargetAgent] = useState('auto');
   const [messages, setMessages] = useState([{
     role: 'ai',
-    content: `Hello ${user?.name}! 👋 I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
+    content: `Hello ${user?.name}! I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
     agent: 'general',
     confidence: 0.9,
     hallucination: false,
@@ -78,7 +78,7 @@ export default function Chat({ queryInput, setQueryInput }) {
     } catch (e) {
       setMessages([...newMessages, {
         role: 'ai',
-        content: `⚠️ Unable to reach the backend (${e.message}).`,
+        content: `Unable to reach the backend (${e.message}).`,
         agent: 'general', confidence: 0, hallucination: false, citations: []
       }]);
     } finally {
@@ -117,8 +117,8 @@ export default function Chat({ queryInput, setQueryInput }) {
             key={i} 
             className={`flex gap-4 max-w-full ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-lg ${
-              m.role === 'user' ? 'bg-primary text-slate-900 dark:text-white border-primary shadow-primary/20' : 'glass-panel text-foreground border-slate-200 dark:border-white/10'
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${
+              m.role === 'user' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-foreground border-border'
             }`}>
               {m.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
             </div>
@@ -126,7 +126,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             <div className={`flex flex-col max-w-[85%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
                 m.role === 'user' 
-                  ? 'bg-gradient-to-r from-primary to-purple-600 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] px-4 py-3 rounded-2xl rounded-tr-sm border border-slate-200 dark:border-white/10' 
+                  ? 'bg-primary text-primary-foreground shadow-sm px-4 py-3 rounded-2xl rounded-tr-sm border border-transparent' 
                   : 'text-foreground pt-1.5'
               }`}>
                 {m.content}
@@ -204,26 +204,22 @@ export default function Chat({ queryInput, setQueryInput }) {
         {typing && (
           <div className="flex gap-4 animate-in slide-in-from-bottom-2">
             <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border bg-secondary text-foreground border-border">
-              <Bot className="w-5 h-5" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             </div>
             <div className="flex items-center pt-2">
-              <div className="flex gap-1.5 px-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce"></div>
-              </div>
+              <span className="text-xs font-semibold text-muted-foreground ml-2">Agent is thinking...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      <div className="p-6 border-t border-white/[0.05] glass-panel rounded-t-3xl mx-4 mb-4 mt-auto shrink-0 relative z-50">
+      <div className="p-6 border-t border-border bg-card rounded-t-3xl mx-4 mb-4 mt-auto shrink-0 relative z-50 shadow-sm">
         <div className="flex flex-wrap gap-2 mb-4">
           {['What is the remote work policy?', 'Summarize the NDA', 'How to claim expenses?'].map(q => (
             <button 
               key={q} 
-              className="px-4 py-2 glass-panel glass-panel-hover rounded-full text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white transition-all shadow-lg"
+              className="px-4 py-2 bg-card border border-border hover:border-primary/50 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-all shadow-sm"
               onClick={() => { setQueryInput(q); }}
             >
               {q}
@@ -233,7 +229,7 @@ export default function Chat({ queryInput, setQueryInput }) {
         
         <div className="relative mb-3 flex items-center z-50">
           <button 
-            className="flex items-center justify-between w-[320px] px-4 py-3 glass-panel glass-panel-hover rounded-xl text-left transition-all group"
+            className="flex items-center justify-between w-[320px] px-4 py-3 bg-card border border-border hover:border-primary/50 rounded-xl text-left transition-all group shadow-sm"
             onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
             disabled={typing}
           >
@@ -293,7 +289,7 @@ export default function Chat({ queryInput, setQueryInput }) {
                         onClick={() => { setTargetAgent(agent.id); setIsAgentDropdownOpen(false); }}
                       >
                         {targetAgent === agent.id && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-[0_0_10px_rgba(139,92,246,0.3)] dark:shadow-[0_0_10px_rgba(139,92,246,0.8)]"></div>
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-sm"></div>
                         )}
                         <div className={`w-10 h-10 rounded-lg flex shrink-0 items-center justify-center border border-slate-200 dark:border-white/10 ${agent.bg} ${agent.color}`}>
                           <agent.icon className="w-5 h-5" />
@@ -332,7 +328,7 @@ export default function Chat({ queryInput, setQueryInput }) {
 
         <div className="flex gap-3 items-end relative">
           <textarea 
-            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 glass-panel bg-white/50 dark:bg-black/20 text-slate-900 dark:text-white placeholder:text-slate-700 dark:text-slate-400 dark:placeholder:text-slate-800 dark:text-slate-500 rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow shadow-xl" 
+            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow shadow-sm" 
             placeholder="Ask a question about enterprise documents..." 
             value={queryInput}
             onChange={e => setQueryInput(e.target.value)}
@@ -340,7 +336,7 @@ export default function Chat({ queryInput, setQueryInput }) {
             rows="1"
           />
           <button 
-            className="absolute right-3 bottom-3 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-slate-900 dark:text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.5)]" 
+            className="absolute right-3 bottom-3 w-10 h-10 bg-primary hover:opacity-90 text-primary-foreground rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-sm" 
             onClick={sendQuery} 
             disabled={!queryInput.trim() || typing}
           >

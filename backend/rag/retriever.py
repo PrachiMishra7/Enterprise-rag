@@ -1,8 +1,8 @@
 import os
 from typing import List, Dict, Any
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
+from database import engine
 
 # Access level hierarchy
 ROLE_ACCESS_MAP = {
@@ -16,34 +16,41 @@ ROLE_ACCESS_MAP = {
 }
 
 class HybridRetriever:
-    """Enterprise-grade RAG Retriever using LangChain and ChromaDB."""
+    """Enterprise-grade RAG Retriever supporting PGVector and DB Fallback."""
 
-    def __init__(self, model_name: str = 'all-MiniLM-L6-v2', persist_directory: str = "./chroma_db"):
-        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
-        self.persist_directory = persist_directory
+    def __init__(self, model_name: str = 'all-MiniLM-L6-v2'):
+        try:
+            self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
+        except Exception as e:
+            print(f"Embeddings initialization note: {e}")
+            self.embeddings = None
+
+        self.collection_name = "enterprise_rag_docs"
         self.vectorstore = None
-        self._initialized = False
+        
+        if self.embeddings and not str(engine.url).startswith("sqlite"):
+            try:
+                from langchain_postgres.vectorstores import PGVector
+                self.vectorstore = PGVector(
+                    embeddings=self.embeddings,
+                    collection_name=self.collection_name,
+                    connection=engine,
+                    use_jsonb=True,
+                )
+            except Exception as e:
+                print(f"PGVector setup note: {e}")
+                self.vectorstore = None
 
     def _get_all_chunks(self, db):
         from rag.document_processor import DocumentProcessor
         return DocumentProcessor().get_all_chunks(db)
 
     def _build_index(self, db):
-        # Try to load existing persistent DB first
-        if os.path.exists(self.persist_directory) and os.listdir(self.persist_directory):
-            try:
-                self.vectorstore = Chroma(
-                    persist_directory=self.persist_directory, 
-                    embedding_function=self.embeddings
-                )
-                self._initialized = True
-                return
-            except Exception as e:
-                print(f"Failed to load persistent Chroma DB: {e}")
-
+        if not self.vectorstore:
+            return
+            
         chunks = self._get_all_chunks(db)
         if not chunks:
-            self._initialized = True
             return
 
         documents = []
@@ -61,26 +68,20 @@ class HybridRetriever:
             )
             documents.append(doc)
             
-        self.vectorstore = Chroma.from_documents(
-            documents=documents,
-            embedding=self.embeddings,
-            persist_directory=self.persist_directory
-        )
-        self._initialized = True
+        try:
+            self.vectorstore.add_documents(documents)
+        except Exception as e:
+            print(f"Add documents to vectorstore error: {e}")
 
     def add_documents(self, new_chunks: List[dict], metadata: dict):
         if hasattr(self, '_cache'):
             self._cache.clear()
             
         if not self.vectorstore:
-            # We don't have a vector store yet, just mark as not initialized
-            # to rebuild the next time retrieve is called.
-            self._initialized = False
             return
             
         documents = []
         for c in new_chunks:
-            # Check if this is a dictionary from the DB or a raw dict
             if "id" in c:
                 doc = Document(
                     page_content=c["text"],
@@ -94,7 +95,7 @@ class HybridRetriever:
                     }
                 )
             else:
-                 doc = Document(
+                doc = Document(
                     page_content=c["text"],
                     metadata={
                         "source": c.get("source", ""),
@@ -105,7 +106,10 @@ class HybridRetriever:
                 )               
             documents.append(doc)
             
-        self.vectorstore.add_documents(documents)
+        try:
+            self.vectorstore.add_documents(documents)
+        except Exception as e:
+            print(f"Vectorstore insert error: {e}")
 
     def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
         if not hasattr(self, '_cache'):
@@ -115,36 +119,52 @@ class HybridRetriever:
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        if not self._initialized:
-            self._build_index(db)
+        allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
 
-        if not self.vectorstore:
+        if self.vectorstore:
+            try:
+                results = self.vectorstore.max_marginal_relevance_search(query, k=top_k * 3, fetch_k=top_k * 6)
+                filtered_results = []
+                for doc in results:
+                    if doc.metadata.get("access_level") in allowed_access:
+                        filtered_results.append({
+                            "id": doc.metadata.get("id"),
+                            "document_id": doc.metadata.get("document_id"),
+                            "source": doc.metadata.get("source"),
+                            "department": doc.metadata.get("department"),
+                            "access_level": doc.metadata.get("access_level"),
+                            "text": doc.page_content,
+                            "chunk_index": doc.metadata.get("chunk_index"),
+                            "score": 0.0
+                        })
+                        if len(filtered_results) >= top_k:
+                            break
+                if filtered_results:
+                    self._cache[cache_key] = filtered_results
+                    return filtered_results
+            except Exception as e:
+                print(f"Vectorstore query error, using DB fallback: {e}")
+
+        # Database chunk retrieval fallback
+        chunks = self._get_all_chunks(db)
+        if not chunks:
             return []
 
-        allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
+        query_words = [w.lower() for w in query.split() if len(w) > 2]
+        scored_chunks = []
+
+        for c in chunks:
+            if c.get("access_level") in allowed_access:
+                text_lower = c["text"].lower()
+                matches = sum(1 for w in query_words if w in text_lower)
+                scored_chunks.append((matches, c))
+
+        scored_chunks.sort(key=lambda x: x[0], reverse=True)
         
-        # We use MMR for better diversity of context chunks
-        # Langchain Chroma MMR returns documents without scores by default in this setup, 
-        # so we fetch docs and give them a pseudo-score of 1.0 or implement a custom scoring.
-        # MMR helps prevent the context from being flooded with identical chunks.
-        results = self.vectorstore.max_marginal_relevance_search(query, k=top_k * 3, fetch_k=top_k * 6)
-        
-        filtered_results = []
-        for doc in results:
-            if doc.metadata.get("access_level") in allowed_access:
-                filtered_results.append({
-                    "id": doc.metadata.get("id"),
-                    "document_id": doc.metadata.get("document_id"),
-                    "source": doc.metadata.get("source"),
-                    "department": doc.metadata.get("department"),
-                    "access_level": doc.metadata.get("access_level"),
-                    "text": doc.page_content,
-                    "chunk_index": doc.metadata.get("chunk_index"),
-                    "score": 0.0 # MMR does not return similarity score
-                })
-                
-                if len(filtered_results) >= top_k:
-                    break
-                    
-        self._cache[cache_key] = filtered_results
-        return filtered_results
+        # Take top matches, or default allowed chunks if no exact keyword match
+        top_matches = [c for matches, c in scored_chunks if matches > 0][:top_k]
+        if not top_matches:
+            top_matches = [c for _, c in scored_chunks][:top_k]
+
+        self._cache[cache_key] = top_matches
+        return top_matches

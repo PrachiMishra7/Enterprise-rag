@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, T
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
+from pgvector.sqlalchemy import Vector
 
 from database import Base
 
@@ -45,6 +46,7 @@ class DocumentChunk(Base):
     access_level = Column(String, default="employee", index=True)
     text = Column(Text, nullable=False)
     chunk_index = Column(Integer, default=0)
+    embedding = Column(Vector(384)) # Using 384 for all-MiniLM-L6-v2
 
     document = relationship("Document", back_populates="chunks")
 

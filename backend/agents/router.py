@@ -1,6 +1,6 @@
 import os
 import requests
-from typing import List, Dict, Any, TypedDict, Literal
+from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph, START, END
 
 AGENT_SYSTEM_PROMPTS = {
@@ -39,14 +39,29 @@ def route_query(state: AgentState, db=None) -> AgentState:
         state["agent"] = state["target_agent"]
         return state
 
-    query = state["query"]
+    query = state["query"].lower()
+    
+    # Fast keyword routing
+    if any(w in query for w in ["leave", "holiday", "sick", "vacation", "conduct", "harassment", "maternity", "paternity", "hr"]):
+        state["agent"] = "hr"
+        return state
+    if any(w in query for w in ["nda", "contract", "legal", "clause", "breach", "agreement", "violation"]):
+        state["agent"] = "legal"
+        return state
+    if any(w in query for w in ["expense", "reimburse", "flight", "budget", "finance", "receipt", "allowance", "travel"]):
+        state["agent"] = "finance"
+        return state
+    if any(w in query for w in ["password", "ticket", "laptop", "software", "hardware", "it", "sla", "install"]):
+        state["agent"] = "it"
+        return state
+
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
     state["agent"] = "general"
     
     if groq_api_key:
         prompt = f"""Classify the following enterprise query into exactly one department.
 Departments: {', '.join(allowed_agents)}
-Query: {query}
+Query: {state['query']}
 Return only the department name in lowercase, nothing else."""
 
         try:
@@ -54,7 +69,7 @@ Return only the department name in lowercase, nothing else."""
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
                 json={
-                    "model": "llama-3.1-8b-instant",
+                    "model": "groq/compound",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.0,
                     "max_tokens": 10
@@ -102,14 +117,13 @@ def format_context(state: AgentState) -> AgentState:
     return state
 
 def generate_answer(state: AgentState, db=None) -> AgentState:
-    """Generate the response using the LLM."""
+    """Generate the response using the LLM with direct DB fallback."""
     query = state["query"]
     context = state["context"]
     agent = state["agent"]
     
     groq_api_key = os.environ.get("GROQ_API_KEY", "")
     
-    # Retrieve system prompt from db
     system_prompt = None
     if db is not None:
         try:
@@ -125,42 +139,42 @@ def generate_answer(state: AgentState, db=None) -> AgentState:
         
     prompt = f"Context from documents:\n\n{context}\n\nUser Query: {query}"
 
-    if not groq_api_key:
-        state["answer"] = "⚠️ **Groq API Key Missing!**\n\nPlease set the `GROQ_API_KEY` environment variable in your `.env` or terminal to use the Groq free-tier AI."
-        return state
+    answer = None
 
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {groq_api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.2,
-                "stream": False
-            },
-            timeout=30,
-            verify=False
-        )
-        response.raise_for_status()
-        answer = response.json()["choices"][0]["message"]["content"]
-        
-        if not answer:
-            answer = "Groq returned an empty response. Please try again."
-            
-    except requests.exceptions.HTTPError as e:
-        if response.status_code == 401:
-            answer = "⚠️ **Invalid Groq API Key.** Please verify your key."
+    if groq_api_key:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {groq_api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "groq/compound",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.2,
+                    "stream": False
+                },
+                timeout=25,
+                verify=False
+            )
+            if response.status_code == 200:
+                answer = response.json()["choices"][0]["message"]["content"]
+                # Clean reasoning tags if present
+                if answer and "<Think>" in answer and "</Think>" in answer:
+                    answer = answer.split("</Think>")[-1].strip()
+        except Exception as e:
+            print(f"Groq API error: {e}")
+
+    if not answer:
+        # Fallback directly to contextual information from database document chunks
+        if context:
+            answer = f"Based on company documents:\n\n{context}"
         else:
-            answer = f"⚠️ **Groq API Error:** {response.text}"
-    except Exception as e:
-        answer = f"⚠️ **Error generating response with Groq:** {str(e)}"
+            answer = "I could not find specific details matching your query in the enterprise database."
 
     state["answer"] = answer
     return state
@@ -178,7 +192,6 @@ class AgentRouter:
             "citations": []
         }
         
-        # Execute the agent workflow sequentially
         state = route_query(state, db=db)
         state = format_context(state)
         state = generate_answer(state, db=db)
@@ -188,4 +201,3 @@ class AgentRouter:
             "agent": state["agent"],
             "citations": state["citations"]
         }
-

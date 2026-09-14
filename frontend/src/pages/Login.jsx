@@ -5,9 +5,9 @@ import { Bot, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@company.com', password: 'AdminPass!2024', label: 'Administrator', icon: ShieldCheck, color: 'text-amber-500' },
-  { email: 'carol@company.com', password: 'EnterprisePass!2024', label: 'HR Director', icon: Zap, color: 'text-primary' },
-  { email: 'alice@company.com', password: 'EnterprisePass!2024', label: 'Employee', icon: Bot, color: 'text-green-500' },
+  { email: 'admin@company.com', password: 'Admin@123', label: 'Administrator', icon: ShieldCheck, color: 'text-amber-500' },
+  { email: 'hr@company.com', password: 'Hr@123', label: 'HR Admin', icon: Zap, color: 'text-primary' },
+  { email: 'employee@company.com', password: 'Employee@123', label: 'Employee', icon: Bot, color: 'text-green-500' },
 ];
 
 export default function Login() {

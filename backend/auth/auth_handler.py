@@ -54,13 +54,14 @@ ROLE_PERMISSIONS = {
 class AuthHandler:
     def seed_demo_users(self, db: Session):
         demo_users = [
-            {"name": "Alice (Employee)", "email": "alice@company.com", "password": "EnterprisePass!2024", "role": "employee", "department": "general"},
-            {"name": "Bob (Manager)", "email": "bob@company.com", "password": "EnterprisePass!2024", "role": "manager", "department": "general"},
-            {"name": "Carol (HR Admin)", "email": "carol@company.com", "password": "EnterprisePass!2024", "role": "hr_admin", "department": "hr"},
-            {"name": "Dave (Legal Admin)", "email": "dave@company.com", "password": "EnterprisePass!2024", "role": "legal_admin", "department": "legal"},
-            {"name": "Eve (Finance Admin)", "email": "eve@company.com", "password": "EnterprisePass!2024", "role": "finance_admin", "department": "finance"},
-            {"name": "Admin", "email": "admin@company.com", "password": "AdminPass!2024", "role": "admin", "department": "general"},
+            {"name": "Alice (Employee)", "email": "employee@company.com", "password": "Employee@123", "role": "employee", "department": "general"},
+            {"name": "Bob (Manager)", "email": "manager@company.com", "password": "Manager@123", "role": "manager", "department": "general"},
+            {"name": "Carol (HR Admin)", "email": "hr@company.com", "password": "Hr@123", "role": "hr_admin", "department": "hr"},
+            {"name": "Dave (Legal Admin)", "email": "legal@company.com", "password": "Legal@123", "role": "legal_admin", "department": "legal"},
+            {"name": "Eve (Finance Admin)", "email": "finance@company.com", "password": "Finance@123", "role": "finance_admin", "department": "finance"},
+            {"name": "Admin", "email": "admin@company.com", "password": "Admin@123", "role": "admin", "department": "general"},
         ]
+
         
         for u in demo_users:
             if not db.query(User).filter(User.email == u["email"]).first():

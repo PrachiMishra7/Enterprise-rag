@@ -276,7 +276,7 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
             return content.decode("latin-1", errors="replace")
 
     def _split_into_chunks(self, text: str) -> List[str]:
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
@@ -303,7 +303,15 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
         ]
 
     def get_all_chunks(self, db: Session) -> List[dict]:
-        chunks = db.query(DocumentChunk).all()
+        chunks = db.query(
+            DocumentChunk.id,
+            DocumentChunk.document_id,
+            DocumentChunk.source,
+            DocumentChunk.department,
+            DocumentChunk.access_level,
+            DocumentChunk.text,
+            DocumentChunk.chunk_index
+        ).all()
         return [
             {
                 "id": c.id,
