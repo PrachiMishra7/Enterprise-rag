@@ -6,6 +6,8 @@ import {
   Sparkles, FileText, HelpCircle, Layers, Mail, Play, FileCheck, CheckCircle
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 export default function AITools() {
   const { token } = useAuth();
@@ -312,9 +314,7 @@ export default function AITools() {
                 
                 <div className="flex-1 p-6 overflow-y-auto">
                     {result ? (
-                        <div className="prose prose-invert prose-blue max-w-none text-sm">
-                            <ReactMarkdown>{result}</ReactMarkdown>
-                        </div>
+                        <MarkdownRenderer>{result}</MarkdownRenderer>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4 opacity-50">
                             <Sparkles className="w-12 h-12" />

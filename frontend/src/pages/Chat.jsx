@@ -3,6 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
 import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const AGENTS = [
   { 
@@ -129,7 +132,9 @@ export default function Chat({ queryInput, setQueryInput }) {
                   ? 'bg-primary text-primary-foreground shadow-sm px-4 py-3 rounded-2xl rounded-tr-sm border border-transparent' 
                   : 'text-foreground pt-1.5'
               }`}>
-                {m.content}
+                {m.role === 'user' ? m.content : (
+                  <MarkdownRenderer>{m.content}</MarkdownRenderer>
+                )}
               </div>
 
               {m.role === 'ai' && m.agent && m.agent !== 'general' && (
