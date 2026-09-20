@@ -21,3 +21,4 @@ langgraph
 pgvector
 langchain-postgres
 google-generativeai==0.5.4
+networkx==3.3

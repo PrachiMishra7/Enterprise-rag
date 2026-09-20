@@ -1,8 +1,9 @@
 import os
 from typing import List, Dict, Any
-from langchain_huggingface import HuggingFaceEmbeddings
+from typing import List, Dict, Any
 from langchain_core.documents import Document
 from database import engine
+from rag.knowledge_graph import KnowledgeGraph
 
 # Access level hierarchy
 ROLE_ACCESS_MAP = {
@@ -20,6 +21,7 @@ class HybridRetriever:
 
     def __init__(self, model_name: str = 'all-MiniLM-L6-v2'):
         try:
+            from langchain_huggingface import HuggingFaceEmbeddings
             self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
         except Exception as e:
             print(f"Embeddings initialization note: {e}")
@@ -40,6 +42,8 @@ class HybridRetriever:
             except Exception as e:
                 print(f"PGVector setup note: {e}")
                 self.vectorstore = None
+
+        self.kg = KnowledgeGraph()
 
     def _get_all_chunks(self, db):
         from rag.document_processor import DocumentProcessor
@@ -120,6 +124,8 @@ class HybridRetriever:
             return self._cache[cache_key]
 
         allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
+        
+        boosted_chunks = self.kg.get_boosted_chunks(query, db)
 
         if self.vectorstore:
             try:
@@ -127,19 +133,26 @@ class HybridRetriever:
                 filtered_results = []
                 for doc in results:
                     if doc.metadata.get("access_level") in allowed_access:
+                        chunk_id = doc.metadata.get("id")
+                        base_score = 0.0
+                        if chunk_id in boosted_chunks:
+                            base_score += 10.0 # Boost from KG
+                            
                         filtered_results.append({
-                            "id": doc.metadata.get("id"),
+                            "id": chunk_id,
                             "document_id": doc.metadata.get("document_id"),
                             "source": doc.metadata.get("source"),
                             "department": doc.metadata.get("department"),
                             "access_level": doc.metadata.get("access_level"),
                             "text": doc.page_content,
                             "chunk_index": doc.metadata.get("chunk_index"),
-                            "score": 0.0
+                            "score": base_score
                         })
-                        if len(filtered_results) >= top_k:
-                            break
+                
                 if filtered_results:
+                    # Sort by our custom score (putting boosted chunks first)
+                    filtered_results.sort(key=lambda x: x["score"], reverse=True)
+                    filtered_results = filtered_results[:top_k]
                     self._cache[cache_key] = filtered_results
                     return filtered_results
             except Exception as e:
@@ -157,6 +170,8 @@ class HybridRetriever:
             if c.get("access_level") in allowed_access:
                 text_lower = c["text"].lower()
                 matches = sum(1 for w in query_words if w in text_lower)
+                if c["id"] in boosted_chunks:
+                    matches += 5  # Boost from KG
                 scored_chunks.append((matches, c))
 
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
