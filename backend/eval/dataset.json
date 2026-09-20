@@ -1,0 +1,39 @@
+[
+    {
+        "query": "How many days of annual leave am I entitled to?",
+        "role": "employee",
+        "expected_source": "HR_Leave_Policy.txt",
+        "expected_department": "hr"
+    },
+    {
+        "query": "What is the policy for expense reimbursement for domestic travel meals?",
+        "role": "employee",
+        "expected_source": "Expense_Reimbursement_Policy.txt",
+        "expected_department": "finance"
+    },
+    {
+        "query": "How do I report a suspected data breach?",
+        "role": "employee",
+        "expected_source": "Employee_Code_of_Conduct.txt",
+        "expected_department": "hr"
+    },
+    {
+        "query": "What is the SLA for a P1 critical issue?",
+        "role": "manager",
+        "expected_source": "IT_Support_SOP.txt",
+        "expected_department": "it"
+    },
+    {
+        "query": "Who can sign an NDA for an amount of INR 50 Lakhs?",
+        "role": "manager",
+        "expected_source": "NDA_Template_Guidelines.txt",
+        "expected_department": "legal"
+    },
+    {
+        "query": "What happens if I violate the NDA?",
+        "role": "employee",
+        "expected_source": "NDA_Template_Guidelines.txt",
+        "expected_department": "legal",
+        "should_be_blocked": true
+    }
+]
