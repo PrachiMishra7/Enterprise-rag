@@ -36,10 +36,10 @@ const PIPELINE_STEPS = [
   { label: 'Grounded\nAnswer',     icon: CheckCircle },
 ];
 const QUICK_ACTIONS = [
-  { label: 'Upload\nDocuments',  icon: Upload       },
-  { label: 'Connect\nData Source', icon: Link2      },
-  { label: 'Build\nWorkflow',    icon: Workflow     },
-  { label: 'Run\nEvaluation',    icon: FlaskConical },
+  { label: 'Upload\nDocuments',  icon: Upload,       page: 'upload'     },
+  { label: 'Connect\nData Source', icon: Link2,      page: 'connectors' },
+  { label: 'Build\nWorkflow',    icon: Workflow,      page: 'agents'     },
+  { label: 'Run\nEvaluation',    icon: FlaskConical,  page: 'tools'      },
 ];
 const SUGGESTIONS = [
   'Summarize the HR leave policy',

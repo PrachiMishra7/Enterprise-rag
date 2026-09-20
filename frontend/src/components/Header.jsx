@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, Sun, Moon, Bell } from "lucide-react";
 
-export default function Header({ page, setSidebarOpen }) {
+export default function Header({ page, setSidebarOpen, setPage }) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -21,11 +21,17 @@ export default function Header({ page, setSidebarOpen }) {
   };
 
   const titles = {
-    overview: { title: "Dashboard Overview", sub: "System health and document statistics" },
-    chat: { title: "Ask the AI", sub: "RAG-powered answers with hallucination detection" },
-    documents: { title: "Document Library", sub: "Available to your role" },
-    upload: { title: "Upload Document", sub: "Index new enterprise documents" },
-    agents: { title: "AI Agents", sub: "Specialized agents per department" },
+    overview:   { title: "Dashboard Overview",  sub: "System health and document statistics" },
+    chat:       { title: "Ask the AI",          sub: "RAG-powered answers with hallucination detection" },
+    documents:  { title: "Document Library",   sub: "Available to your role" },
+    upload:     { title: "Upload Center",       sub: "Index new enterprise documents" },
+    agents:     { title: "AI Flow Builder",     sub: "Design and manage multi-agent pipelines" },
+    tools:      { title: "AI Utilities",        sub: "Advanced AI workflows to accelerate daily tasks" },
+    prompts:    { title: "Prompt Library",      sub: "Manage and customize agent system prompts" },
+    connectors: { title: "Data Connectors",    sub: "Connect external knowledge sources" },
+    users:      { title: "User Management",    sub: "Manage users and role-based access control" },
+    audit:      { title: "Audit & Security",   sub: "System logs and compliance tracking" },
+    settings:   { title: "Settings",           sub: "Configure system preferences" },
   };
 
   const h = titles[page] || titles.overview;
@@ -42,7 +48,11 @@ export default function Header({ page, setSidebarOpen }) {
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+        <button 
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          onClick={() => setPage?.('audit')}
+          title="Notifications & Audit"
+        >
           <Bell className="w-4 h-4" />
         </button>
         <button onClick={toggleTheme} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Toggle Theme">

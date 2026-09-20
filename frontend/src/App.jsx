@@ -92,7 +92,7 @@ function App() {
       <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} sidebarOpen={sidebarOpen} />
       
       <div className="flex-1 flex flex-col overflow-hidden relative z-10 bg-transparent">
-        <Header page={page} setSidebarOpen={setSidebarOpen} />
+        <Header page={page} setSidebarOpen={setSidebarOpen} setPage={setPage} />
         {renderContent()}
       </div>
       
