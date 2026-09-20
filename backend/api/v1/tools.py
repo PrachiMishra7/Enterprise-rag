@@ -24,7 +24,7 @@ def get_groq_response(system_prompt: str, user_prompt: str, max_tokens: int = 10
                 "Content-Type": "application/json"
             },
             json={
-                "model": "llama-3.1-8b-instant",
+                "model": "groq/compound-mini",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -53,7 +53,7 @@ class FAQRequest(BaseModel):
     document_id: str
 
 @router.post("/generate-faq")
-async def generate_faq(request: FAQRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def generate_faq(request: FAQRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     text = get_document_text(db, request.document_id)
     system_prompt = "You are an enterprise AI. Generate a professional 5-question FAQ based on the provided document. Format as Markdown with clear Q&A."
     user_prompt = f"Document content:\n{text}"
@@ -65,7 +65,7 @@ class CompareRequest(BaseModel):
     document_id_2: str
 
 @router.post("/compare-policies")
-async def compare_policies(request: CompareRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def compare_policies(request: CompareRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     text1 = get_document_text(db, request.document_id_1)
     text2 = get_document_text(db, request.document_id_2)
     system_prompt = "You are an enterprise analyst. Compare the two provided documents. Highlight similarities, differences, and key policy changes. Format as Markdown."
@@ -78,7 +78,7 @@ class QARequest(BaseModel):
     question: str
 
 @router.post("/document-qa")
-async def document_qa(request: QARequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def document_qa(request: QARequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     text = get_document_text(db, request.document_id)
     system_prompt = "You are a highly precise AI assistant. Answer the user's question concisely and accurately using ONLY the provided document context. Do not include any extra conversational filler, unrelated policy details, or information not found in the text. If the answer is not in the document, reply exactly with 'The provided document does not contain this information.'"
     user_prompt = f"Context:\n{text}\n\nQuestion: {request.question}"
@@ -90,7 +90,7 @@ class EmailRequest(BaseModel):
     scenario: str
 
 @router.post("/draft-email")
-async def draft_email(request: EmailRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def draft_email(request: EmailRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     text = ""
     if request.document_id:
         text = get_document_text(db, request.document_id)
@@ -105,7 +105,7 @@ class ReportRequest(BaseModel):
     topic: str
 
 @router.post("/generate-report")
-async def generate_report(request: ReportRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def generate_report(request: ReportRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     if not request.document_ids:
         raise HTTPException(status_code=400, detail="Must provide at least one document ID")
         
