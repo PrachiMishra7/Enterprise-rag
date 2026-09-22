@@ -31,6 +31,8 @@ export default function Header({ page, setSidebarOpen, setPage }) {
     connectors: { title: "Data Connectors",    sub: "Connect external knowledge sources" },
     users:      { title: "User Management",    sub: "Manage users and role-based access control" },
     audit:      { title: "Audit & Security",   sub: "System logs and compliance tracking" },
+    evaluation: { title: "System Evaluation",  sub: "Automated RAG benchmarking suite" },
+    kg:         { title: "Knowledge Graph",     sub: "Entity-relationship graph across all documents" },
     settings:   { title: "Settings",           sub: "Configure system preferences" },
   };
 

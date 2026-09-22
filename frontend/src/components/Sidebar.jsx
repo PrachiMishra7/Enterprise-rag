@@ -1,6 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, MessageSquare, Folder, Bot, Upload, LogOut, TerminalSquare, Plug, Users, ShieldAlert, Settings, Zap } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Folder, Upload, LogOut, TerminalSquare, Plug, Users, ShieldAlert, Settings, Zap, FlaskConical, Share2, Bot } from 'lucide-react';
 
 export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
   const { user, logout } = useAuth();
@@ -16,22 +16,27 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
     { title: "Knowledge Base", items: [
       { id: "documents", icon: Folder, label: "Document Library" },
       { id: "connectors", icon: Plug, label: "Data Connectors" },
+      { id: "kg", icon: Share2, label: "Knowledge Graph" },
     ]},
     { title: "Administration", items: [
       { id: "upload", icon: Upload, label: "Upload Center" },
       { id: "users", icon: Users, label: "User Management" },
       { id: "audit", icon: ShieldAlert, label: "Audit & Security" },
+      { id: "evaluation", icon: FlaskConical, label: "System Evaluation" },
       { id: "settings", icon: Settings, label: "Settings" },
     ]},
   ];
 
   return (
     <div className={`fixed inset-y-0 left-0 md:relative w-60 min-w-[240px] bg-card border-r border-border flex flex-col z-50 h-full transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-      <div className="px-5 h-14 flex items-center gap-3 border-b border-border shrink-0">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <Bot className="w-4 h-4 text-primary-foreground" />
-        </div>
-        <span className="font-semibold text-[15px] tracking-tight text-foreground">EnterpriseRAG</span>
+      <div className="px-4 h-14 flex items-center gap-2.5 border-b border-border shrink-0">
+        <img
+          src="/logo.jpg"
+          alt="EnterpriseRAG logo"
+          className="w-8 h-8 rounded-lg object-cover shrink-0"
+          style={{ filter: 'drop-shadow(0 0 8px rgba(59,130,246,0.6))' }}
+        />
+        <span className="font-bold text-[15px] tracking-tight text-foreground">EnterpriseRAG</span>
       </div>
 
       <div className="flex-1 flex flex-col gap-5 px-3 py-4 overflow-y-auto no-scrollbar">

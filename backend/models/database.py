@@ -1,10 +1,19 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Text, event
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
-from pgvector.sqlalchemy import Vector
 
-from database import Base
+from database import Base, engine
+
+# Use pgvector's Vector type for PostgreSQL, plain Text for SQLite
+def _get_embedding_column():
+    if engine.dialect.name == "postgresql":
+        try:
+            from pgvector.sqlalchemy import Vector
+            return Column(Vector(384))
+        except Exception:
+            pass
+    return Column(Text, nullable=True)  # SQLite fallback: store as JSON string
 
 def generate_uuid():
     return str(uuid.uuid4())
@@ -46,7 +55,7 @@ class DocumentChunk(Base):
     access_level = Column(String, default="employee", index=True)
     text = Column(Text, nullable=False)
     chunk_index = Column(Integer, default=0)
-    embedding = Column(Vector(384)) # Using 384 for all-MiniLM-L6-v2
+    embedding = _get_embedding_column()  # Vector(384) on PG, Text on SQLite
 
     document = relationship("Document", back_populates="chunks")
 

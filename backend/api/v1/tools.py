@@ -1,5 +1,7 @@
 import os
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -24,7 +26,7 @@ def get_groq_response(system_prompt: str, user_prompt: str, max_tokens: int = 10
                 "Content-Type": "application/json"
             },
             json={
-                "model": "groq/compound-mini",
+                "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b"),
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -32,7 +34,8 @@ def get_groq_response(system_prompt: str, user_prompt: str, max_tokens: int = 10
                 "temperature": 0.2,
                 "max_tokens": max_tokens
             },
-            timeout=30
+            timeout=30,
+            verify=False
         )
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]

@@ -14,6 +14,8 @@ import DataConnectors from './pages/DataConnectors';
 import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import AITools from './pages/AITools';
+import RunEvaluation from './pages/RunEvaluation';
+import KnowledgeGraph from './pages/KnowledgeGraph';
 
 
 function App() {
@@ -72,6 +74,8 @@ function App() {
       case 'agents': return <Agents navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
       case 'tools': return <AITools />;
       case 'prompts': return <Prompts />;
+      case 'evaluation': return <RunEvaluation />;
+      case 'kg': return <KnowledgeGraph />;
       case 'connectors': return <DataConnectors />;
       case 'users': return <UserManagement />;
       case 'audit': return <AuditLogs />;

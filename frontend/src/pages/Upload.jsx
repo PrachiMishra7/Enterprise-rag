@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { apiCall } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
-import { CloudUpload, FileUp, Loader2 } from 'lucide-react';
+import Loader from '../components/Loader';
+import { CloudUpload, FileUp } from 'lucide-react';
 
 export default function Upload({ showToast, loadDocuments }) {
   const { token } = useAuth();
@@ -40,7 +41,7 @@ export default function Upload({ showToast, loadDocuments }) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-slate-50 dark:bg-[#0a0f1d] text-slate-900 dark:text-white">
+    <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-background text-foreground">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">Upload Knowledge</h1>
         <p className="text-muted-foreground text-base mb-10">
@@ -48,7 +49,7 @@ export default function Upload({ showToast, loadDocuments }) {
         </p>
 
         <div 
-          className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-all duration-200 mb-8 ${
+          className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 mb-8 ${
             dragActive 
               ? 'border-primary bg-primary/5 scale-[1.01]' 
               : 'border-border bg-card hover:border-primary/50 hover:bg-secondary/50'
@@ -56,15 +57,19 @@ export default function Upload({ showToast, loadDocuments }) {
           onDragOver={e => { e.preventDefault(); setDragActive(true); }}
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !loading && fileInputRef.current?.click()}
         >
-          <div className="w-16 h-16 bg-secondary text-muted-foreground rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm">
-            {loading ? <Loader2 className="w-8 h-8 animate-spin text-primary" /> : <CloudUpload className="w-8 h-8" />}
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">
-            {loading ? 'Uploading & Indexing...' : 'Click or drag document here'}
-          </h3>
-          <p className="text-sm text-muted-foreground">Supports .txt, .pdf, .docx (Max 10MB)</p>
+          {loading ? (
+            <Loader size="md" text="Uploading & Vectorizing Document..." subtext="Generating semantic embeddings and indexing into knowledge base" />
+          ) : (
+            <>
+              <div className="w-16 h-16 bg-secondary text-muted-foreground rounded-full flex items-center justify-center mx-auto mb-5 shadow-sm">
+                <CloudUpload className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Click or drag document here</h3>
+              <p className="text-sm text-muted-foreground">Supports .txt, .pdf, .docx (Max 10MB)</p>
+            </>
+          )}
           <input 
             ref={fileInputRef}
             type="file" 
@@ -112,3 +117,4 @@ export default function Upload({ showToast, loadDocuments }) {
     </div>
   );
 }
+

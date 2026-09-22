@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiCall } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import Loader from '../components/Loader';
 import { 
   FileText, Shield, HardDrive, Inbox, Search, Filter, 
   Layers, FolderOpen, AlertCircle, RefreshCw, Database, 
@@ -216,7 +217,9 @@ export default function Documents({ documents = [], loadDocuments }) {
         </div>
 
         {/* Main Grid / Empty State */}
-        {filteredDocs.length === 0 ? (
+        {loading ? (
+          <Loader size="full" text="Loading Knowledge Repository…" subtext="Retrieving indexed documents and chunk statistics" />
+        ) : filteredDocs.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

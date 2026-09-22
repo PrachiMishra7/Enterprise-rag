@@ -1,6 +1,8 @@
 import re
 import os
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from typing import List, Dict, Any
 
 class HallucinationDetector:
@@ -98,7 +100,7 @@ Do not output anything else but the number.
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {groq_api_key}", "Content-Type": "application/json"},
                 json={
-                    "model": "groq/compound",
+                    "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b"),
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.0,
                     "max_tokens": 5

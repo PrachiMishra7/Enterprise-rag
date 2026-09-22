@@ -78,7 +78,7 @@ async def summarize_document(
                 "Content-Type": "application/json"
             },
             json={
-                "model": "groq/compound",
+                "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b"),
                 "messages": [
                     {"role": "system", "content": "You are a professional enterprise document summarizer. Generate a concise, highly-structured executive summary of the document with 3-4 bullet points highlighting key insights, security scope, and corporate relevance."},
                     {"role": "user", "content": f"Document: {doc.filename}\nDepartment: {doc.department}\nAccess Level: {doc.access_level}\n\nContent:\n{full_text}"}
@@ -86,7 +86,8 @@ async def summarize_document(
                 "temperature": 0.3,
                 "max_tokens": 400
             },
-            timeout=30
+            timeout=30,
+            verify=False
         )
         response.raise_for_status()
         summary = response.json()["choices"][0]["message"]["content"]

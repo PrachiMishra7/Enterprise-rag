@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import Loader from '../components/Loader';
+import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -207,13 +208,11 @@ export default function Chat({ queryInput, setQueryInput }) {
         </AnimatePresence>
 
         {typing && (
-          <div className="flex gap-4 animate-in slide-in-from-bottom-2">
-            <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border bg-secondary text-foreground border-border">
-              <Loader2 className="w-5 h-5 animate-spin" />
+          <div className="flex gap-3 items-center p-3 rounded-2xl bg-card border border-border w-fit animate-in slide-in-from-bottom-2">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-primary" />
             </div>
-            <div className="flex items-center pt-2">
-              <span className="text-xs font-semibold text-muted-foreground ml-2">Agent is thinking...</span>
-            </div>
+            <Loader size="sm" text="Agent is reasoning & searching knowledge base…" variant="dots" />
           </div>
         )}
         <div ref={messagesEndRef} className="h-4" />
