@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
-import { Bot, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ShieldCheck, AlertCircle, ArrowRight, Bot, Lock, Mail, CheckCircle2, UserCheck } from 'lucide-react';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@company.com', password: 'Admin@123', label: 'Administrator', icon: ShieldCheck, color: 'text-amber-500' },
-  { email: 'hr@company.com', password: 'Hr@123', label: 'HR Admin', icon: Zap, color: 'text-primary' },
-  { email: 'employee@company.com', password: 'Employee@123', label: 'Employee', icon: Bot, color: 'text-green-500' },
+  { email: 'admin@company.com', password: 'Admin@123', label: 'Administrator', role: 'Full Access', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  { email: 'hr@company.com', password: 'Hr@123', label: 'HR Admin', role: 'HR & People Ops', badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+  { email: 'employee@company.com', password: 'Employee@123', label: 'Employee', role: 'General Workspace', badge: 'bg-secondary text-muted-foreground border-border' },
 ];
 
 export default function Login() {
@@ -27,110 +26,132 @@ export default function Login() {
       const data = await apiCall('POST', '/auth/login', { email, password });
       login({ id: data.user_id, role: data.role, name: data.name, email }, data.access_token);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background relative overflow-hidden selection:bg-primary/30">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background px-4 py-12 relative text-foreground selection:bg-primary/20">
       
-      {/* Premium Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
-      
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+      {/* Central Login Card */}
+      <div className="w-full max-w-[420px]">
+        
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <img
+            src="/logo.jpg"
+            alt="EnterpriseRAG logo"
+            className="w-14 h-14 rounded-2xl object-cover shrink-0 mx-auto mb-4 shadow-sm"
+          />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            EnterpriseRAG
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Enterprise Knowledge Retrieval & Multi-Agent Intelligence
+          </p>
+        </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md relative z-10 p-6"
-      >
-        <div className="bg-card/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+        {/* Form Container */}
+        <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-xs">
           
-          {/* Top Edge Glow */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-          
-          <div className="text-center mb-10 relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 text-slate-900 dark:text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/25 border border-white/20">
-              <Bot className="w-8 h-8" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">EnterpriseRAG</h1>
-            <p className="text-sm text-muted-foreground font-medium">Secure AI Document Intelligence</p>
+          <div className="mb-6">
+            <h2 className="text-base font-semibold text-card-foreground">Sign In</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Enter your corporate credentials to access the workspace.</p>
           </div>
-          
+
           {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl mb-6"
-            >
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              {error}
-            </motion.div>
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium mb-5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
           )}
-          
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</label>
-              <input 
-                className="w-full px-4 py-3 bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
-                type="email" 
-                placeholder="name@company.com" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-              />
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-foreground">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input 
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow" 
+                  type="email" 
+                  placeholder="name@company.com" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">Password</label>
-              <input 
-                className="w-full px-4 py-3 bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-              />
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-foreground">
+                  Password
+                </label>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input 
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  required
+                />
+              </div>
             </div>
+
             <button 
-              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-white hover:bg-gray-100 text-black rounded-xl text-sm font-bold transition-all shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed mt-4 group" 
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed mt-2" 
               type="submit"
-              disabled={loading}
+              disabled={loading || !email || !password}
             >
-              {loading ? 'Authenticating securely...' : 'Sign In'}
-              {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+              {loading ? 'Authenticating...' : 'Sign In'}
+              {!loading && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-slate-200 dark:border-white/5">
-            <div className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-widest mb-4 text-center">Demo Access Points</div>
-            <div className="grid gap-2.5">
-              {DEMO_ACCOUNTS.map(a => {
-                const Icon = a.icon;
-                return (
-                  <div 
-                    key={a.email} 
-                    className="flex justify-between items-center px-4 py-3 bg-black/10 border border-slate-200 dark:border-white/5 hover:border-white/20 hover:bg-slate-100 dark:bg-white/5 rounded-xl cursor-pointer transition-all group" 
-                    onClick={() => { setEmail(a.email); setPassword(a.password); }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center border border-slate-200 dark:border-white/5 ${a.color}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="font-semibold text-slate-900 dark:text-white text-xs">{a.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{a.email}</span>
-                      </div>
+          {/* Quick Demo Credentials */}
+          <div className="mt-8 pt-5 border-t border-border">
+            <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Quick Access Demo Accounts
+            </div>
+            <div className="space-y-2">
+              {DEMO_ACCOUNTS.map((a) => (
+                <button
+                  type="button"
+                  key={a.email} 
+                  className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-secondary/40 hover:bg-secondary hover:border-border/80 transition-all text-left group"
+                  onClick={() => { setEmail(a.email); setPassword(a.password); }}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <UserCheck className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    <div className="truncate">
+                      <div className="text-xs font-semibold text-foreground">{a.label}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono truncate">{a.email}</div>
                     </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </div>
-                );
-              })}
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border shrink-0 ${a.badge}`}>
+                    {a.role}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
+
         </div>
-      </motion.div>
+
+        {/* Security Footer */}
+        <div className="mt-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground" />
+          <span>Protected by Enterprise RBAC & Audit Trails</span>
+        </div>
+
+      </div>
     </div>
   );
 }
