@@ -48,12 +48,13 @@ async def query(request: QueryRequest, current_user: dict = Depends(get_current_
             sources=[]
         )
 
-    # Route to specialized agent
+    # Route to specialized agent with conversation memory
     agent_response = agent_router.route_and_respond(
         query=request.query,
         chunks=retrieved_chunks,
         user_role=current_user["role"],
         target_agent=request.target_agent,
+        history=request.history,
         db=db
     )
 

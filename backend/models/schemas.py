@@ -27,6 +27,7 @@ class QueryRequest(BaseModel):
     query: str
     department: Optional[str] = None
     target_agent: Optional[str] = "auto"
+    history: Optional[List[dict]] = None  # Conversation memory: [{"role": "user"|"ai", "content": "..."}]
 
 
 class Citation(BaseModel):

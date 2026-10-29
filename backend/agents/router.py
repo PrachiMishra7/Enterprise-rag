@@ -22,6 +22,7 @@ class AgentState(TypedDict):
     context: str
     answer: str
     citations: List[dict]
+    history: List[dict]
 
 def get_allowed_agents(db=None) -> List[str]:
     if db is not None:
@@ -145,6 +146,14 @@ def generate_answer(state: AgentState, db=None) -> AgentState:
 
     if groq_api_key:
         try:
+            # Build messages list with multi-turn history (last 4 turns)
+            messages_payload = [{"role": "system", "content": system_prompt}]
+            history = state.get("history") or []
+            for h in history[-4:]:
+                r = "user" if h.get("role") == "user" else "assistant"
+                messages_payload.append({"role": r, "content": h.get("content", "")})
+            messages_payload.append({"role": "user", "content": prompt})
+
             response = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={
@@ -153,10 +162,7 @@ def generate_answer(state: AgentState, db=None) -> AgentState:
                 },
                 json={
                     "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b"),
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": prompt}
-                    ],
+                    "messages": messages_payload,
                     "temperature": 0.2,
                     "stream": False
                 },
@@ -182,7 +188,7 @@ def generate_answer(state: AgentState, db=None) -> AgentState:
     return state
 
 class AgentRouter:
-    def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto", db=None) -> dict:
+    def route_and_respond(self, query: str, chunks: List[dict], user_role: str, target_agent: str = "auto", history: List[dict] = None, db=None) -> dict:
         state = {
             "query": query,
             "chunks": chunks,
@@ -191,7 +197,8 @@ class AgentRouter:
             "agent": "general",
             "context": "",
             "answer": "",
-            "citations": []
+            "citations": [],
+            "history": history or []
         }
         
         state = route_query(state, db=db)

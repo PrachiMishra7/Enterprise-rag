@@ -291,10 +291,49 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
         }
 
     def _extract_text(self, content: bytes, filename: str) -> str:
-        try:
-            return content.decode("utf-8")
-        except UnicodeDecodeError:
-            return content.decode("latin-1", errors="replace")
+        """Extract clean text from PDF, DOCX, Markdown, or plain text files."""
+        lower_name = filename.lower()
+
+        # 1. Native PDF Extraction (pypdf)
+        if lower_name.endswith(".pdf"):
+            try:
+                import pypdf
+                pdf_reader = pypdf.PdfReader(io.BytesIO(content))
+                pages_text = []
+                for idx, page in enumerate(pdf_reader.pages, 1):
+                    t = page.extract_text()
+                    if t and t.strip():
+                        pages_text.append(f"[Page {idx}]\n{t.strip()}")
+                if pages_text:
+                    return "\n\n".join(pages_text)
+            except Exception as e:
+                print(f"pypdf extraction notice for {filename}: {e}")
+
+        # 2. Native DOCX Extraction (python-docx)
+        if lower_name.endswith(".docx"):
+            try:
+                import docx
+                doc = docx.Document(io.BytesIO(content))
+                paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+                # Also extract table cells
+                for table in doc.tables:
+                    for row in table.rows:
+                        row_text = " | ".join([cell.text.strip() for cell in row.cells if cell.text.strip()])
+                        if row_text:
+                            paragraphs.append(row_text)
+                if paragraphs:
+                    return "\n\n".join(paragraphs)
+            except Exception as e:
+                print(f"python-docx extraction notice for {filename}: {e}")
+
+        # 3. Text / Markdown / Code fallback
+        for encoding in ["utf-8", "utf-8-sig", "latin-1", "cp1252"]:
+            try:
+                return content.decode(encoding)
+            except UnicodeDecodeError:
+                continue
+
+        return content.decode("utf-8", errors="replace")
 
     def _split_into_chunks(self, text: str) -> List[str]:
         from langchain_text_splitters import RecursiveCharacterTextSplitter

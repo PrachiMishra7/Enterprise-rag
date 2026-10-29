@@ -97,7 +97,17 @@ export default function Chat({ queryInput, setQueryInput }) {
     setTyping(true);
 
     try {
-      const data = await apiCall('POST', '/query', { query, target_agent: targetAgent }, false, token);
+      // Build conversation history buffer for contextual follow-up questions
+      const historyBuffer = messages
+        .filter(m => m.role === 'user' || m.role === 'ai')
+        .slice(-6)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const data = await apiCall('POST', '/query', { 
+        query, 
+        target_agent: targetAgent,
+        history: historyBuffer 
+      }, false, token);
       setMessages([...newMessages, {
         role: 'ai',
         content: data.answer,
