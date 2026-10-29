@@ -34,12 +34,31 @@ if RAW_DATABASE_URL and not RAW_DATABASE_URL.startswith("sqlite"):
                     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS storage_path VARCHAR;",
                     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_url VARCHAR;",
                     "ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_size INTEGER DEFAULT 0;",
-                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR;"
+                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR;",
+                    """CREATE TABLE IF NOT EXISTS data_connectors (
+                        id VARCHAR PRIMARY KEY,
+                        name VARCHAR NOT NULL,
+                        "desc" VARCHAR NOT NULL,
+                        status VARCHAR DEFAULT 'disconnected',
+                        last_sync VARCHAR DEFAULT 'Never',
+                        doc_count INTEGER DEFAULT 0,
+                        config TEXT,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );""",
+                    """CREATE TABLE IF NOT EXISTS system_settings (
+                        key VARCHAR PRIMARY KEY,
+                        value TEXT NOT NULL,
+                        description VARCHAR,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );"""
                 ]
                 for q in migration_queries:
-                    conn.execute(text(q))
+                    try:
+                        conn.execute(text(q))
+                    except Exception as inner_e:
+                        print(f"Migration item note: {inner_e}")
                 conn.commit()
-                print("Documents table schema verified and updated.")
+                print("Database tables and schema verified.")
             except Exception as me:
                 print(f"Schema auto-migration notice: {me}")
 

@@ -96,33 +96,48 @@ async def update_settings(payload: Dict[str, Any], current_user: dict = Depends(
 
 @router.get("/connectors")
 async def list_connectors(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    existing = db.query(DataConnector).all()
-    if not existing:
-        # Seed defaults
-        for dc in DEFAULT_CONNECTORS:
-            obj = DataConnector(
-                id=dc["id"],
-                name=dc["name"],
-                desc=dc["desc"],
-                status=dc["status"],
-                last_sync=dc["last_sync"],
-                doc_count=dc["doc_count"]
-            )
-            db.add(obj)
-        db.commit()
+    try:
         existing = db.query(DataConnector).all()
+        if not existing:
+            # Seed defaults
+            for dc in DEFAULT_CONNECTORS:
+                obj = DataConnector(
+                    id=dc["id"],
+                    name=dc["name"],
+                    desc=dc["desc"],
+                    status=dc["status"],
+                    last_sync=dc["last_sync"],
+                    doc_count=dc["doc_count"]
+                )
+                db.add(obj)
+            db.commit()
+            existing = db.query(DataConnector).all()
 
-    return [
-        {
-            "id": c.id,
-            "name": c.name,
-            "desc": c.desc,
-            "status": c.status,
-            "lastSync": c.last_sync,
-            "docCount": c.doc_count
-        }
-        for c in existing
-    ]
+        return [
+            {
+                "id": c.id,
+                "name": c.name,
+                "desc": c.desc,
+                "status": c.status,
+                "lastSync": c.last_sync,
+                "docCount": c.doc_count
+            }
+            for c in existing
+        ]
+    except Exception as e:
+        print(f"Error querying data_connectors table: {e}. Returning default connectors.")
+        db.rollback()
+        return [
+            {
+                "id": dc["id"],
+                "name": dc["name"],
+                "desc": dc["desc"],
+                "status": dc["status"],
+                "lastSync": dc["last_sync"],
+                "docCount": dc["doc_count"]
+            }
+            for dc in DEFAULT_CONNECTORS
+        ]
 
 @router.post("/connectors/{connector_id}/toggle")
 async def toggle_connector(
