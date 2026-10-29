@@ -1,32 +1,19 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TerminalSquare, Search, Copy, CheckCircle2, Edit3, 
   Bot, ArrowRight, Landmark, Monitor, Scale, Users, 
-  RefreshCw, Save, X, RotateCcw, AlertTriangle 
+  RefreshCw, Save, X, RotateCcw, AlertTriangle, Sparkles, Check
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
 
 const PROMPT_META = {
-  hr: { icon: Users, color: 'emerald', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', tags: ['HR', 'Policies', 'Onboarding'] },
-  legal: { icon: Scale, color: 'purple', bg: 'bg-purple-500/10', border: 'border-purple-500/30', tags: ['Legal', 'Compliance', 'NDAs'] },
-  finance: { icon: Landmark, color: 'amber', bg: 'bg-amber-500/10', border: 'border-amber-500/30', tags: ['Finance', 'Budgets', 'Expenses'] },
-  it: { icon: Monitor, color: 'orange', bg: 'bg-orange-500/10', border: 'border-orange-500/30', tags: ['IT', 'Support', 'Hardware'] },
-  general: { icon: Bot, color: 'blue', bg: 'bg-blue-500/10', border: 'border-blue-500/30', tags: ['General', 'Fallback'] },
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1, 
-    transition: { staggerChildren: 0.05 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } }
+  hr: { icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10', tags: ['HR', 'Benefits', 'Onboarding'] },
+  legal: { icon: Scale, color: 'text-primary', bg: 'bg-primary/10', tags: ['Legal', 'Compliance', 'NDAs'] },
+  finance: { icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10', tags: ['Finance', 'Payroll', 'Budgets'] },
+  it: { icon: Monitor, color: 'text-blue-500', bg: 'bg-blue-500/10', tags: ['IT', 'Hardware', 'Security'] },
+  general: { icon: Bot, color: 'text-muted-foreground', bg: 'bg-secondary', tags: ['General', 'Fallback Router'] },
 };
 
 export default function Prompts() {
@@ -82,39 +69,26 @@ export default function Prompts() {
     setErrorMsg('');
     try {
       await apiCall('PUT', `/prompts/${editingPrompt.id}`, { system_prompt: editingPrompt.system_prompt }, false, token);
-      
-      // Update local state
       setPrompts(prev => prev.map(p => p.id === editingPrompt.id ? { ...p, system_prompt: editingPrompt.system_prompt } : p));
       setEditingPrompt(null);
     } catch (e) {
       console.error(e);
-      setErrorMsg(e.message || 'Failed to update system prompt. Do you have sufficient permissions?');
+      setErrorMsg(e.message || 'Failed to update system prompt. Insufficient permissions.');
     } finally {
       setUpdating(false);
     }
   };
 
   const handleResetPrompt = async (id) => {
-    if (!window.confirm('Are you sure you want to reset this agent prompt to its default system template?')) return;
+    if (!window.confirm('Reset this agent prompt to the default enterprise template?')) return;
     setResetting(true);
     setErrorMsg('');
     try {
-      await apiCall('POST', `/prompts/${id}/reset`, null, false, token);
-      
-      // Refresh list to pull default values
-      const data = await apiCall('GET', '/prompts/list', null, false, token);
-      setPrompts(data.prompts || []);
-      
-      // If we are currently editing, close/refresh it
-      if (editingPrompt && editingPrompt.id === id) {
-        const resetObj = (data.prompts || []).find(p => p.id === id);
-        if (resetObj) {
-          setEditingPrompt({ ...resetObj });
-        }
-      }
+      const res = await apiCall('POST', `/prompts/${id}/reset`, null, false, token);
+      setPrompts(prev => prev.map(p => p.id === id ? { ...p, system_prompt: res.system_prompt } : p));
+      setEditingPrompt(null);
     } catch (e) {
-      console.error(e);
-      setErrorMsg(e.message || 'Failed to reset system prompt.');
+      setErrorMsg(e.message || 'Failed to reset prompt');
     } finally {
       setResetting(false);
     }
@@ -131,132 +105,114 @@ export default function Prompts() {
   const canEdit = ['admin', 'manager', 'hr_admin', 'legal_admin', 'finance_admin', 'it_admin'].includes(user?.role);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-background text-slate-900 dark:text-foreground overflow-y-auto relative">
-      
-      {/* Dynamic Backgrounds */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-      <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-
-      <div className="max-w-7xl mx-auto w-full p-6 md:p-10 relative z-10">
+    <div className="flex-1 flex flex-col bg-background text-foreground overflow-y-auto">
+      <div className="max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1 flex flex-col">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-5 border-b border-border">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <TerminalSquare className="w-6 h-6 text-purple-400" />
-              <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">Prompt Library</h1>
-            </div>
-            <p className="text-sm text-[#8b92a5] font-bold tracking-widest uppercase">Manage system instructions and AI behavior templates.</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Prompt Library
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              System instructions, persona parameters, and grounding templates for domain agents.
+            </p>
           </div>
           
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-700 dark:text-muted-foreground" />
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input 
                 type="text" 
-                placeholder="Search prompts or tags..." 
+                placeholder="Search templates or tags..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border rounded-xl text-sm font-medium focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all placeholder:text-slate-800 dark:text-muted-foreground"
+                className="w-full pl-9 pr-3.5 py-2 bg-card border border-border rounded-lg text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
               />
             </div>
             <button 
               onClick={fetchPrompts}
               disabled={loading}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border hover:bg-white/10 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground transition-colors"
+              title="Refresh templates"
             >
-              <RefreshCw className={`w-4 h-4 text-slate-700 dark:text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Prompts Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-20">
-            <RefreshCw className="w-10 h-10 text-purple-500 animate-spin mb-4" />
-            <p className="text-slate-700 dark:text-muted-foreground text-sm font-bold tracking-widest uppercase">Fetching Active Prompt Configuration...</p>
+          <div className="flex flex-col items-center justify-center p-16 text-muted-foreground space-y-2 bg-card border border-border rounded-xl">
+            <RefreshCw className="w-5 h-5 text-primary animate-spin" />
+            <p className="text-xs">Loading prompt configuration from database...</p>
+          </div>
+        ) : filteredPrompts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-center text-muted-foreground bg-card border border-border rounded-xl">
+            <TerminalSquare className="w-8 h-8 opacity-40 mb-2" />
+            <p className="text-sm font-semibold text-foreground">No prompts match your criteria</p>
+            <p className="text-xs mt-0.5">Try searching with a different keyword or department tag.</p>
           </div>
         ) : (
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-          >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredPrompts.map(prompt => {
               const meta = PROMPT_META[prompt.id] || PROMPT_META.general;
               const Icon = meta.icon;
               const isCopied = copiedId === prompt.id;
               
               return (
-                <motion.div 
+                <div 
                   key={prompt.id}
-                  variants={itemVariants}
-                  whileHover={{ y: -5 }}
-                  className="bg-white/[0.03] backdrop-blur-3xl border border-slate-200 dark:border-border rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden group shadow-xl hover:shadow-2xl transition-all"
+                  className="bg-card border border-border hover:border-border/90 rounded-xl p-5 flex flex-col justify-between shadow-xs transition-shadow"
                 >
-                  <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-20 -mt-20 opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity ${meta.bg.split(' ')[0].replace('/10', '/30')}`}></div>
-                  
-                  <div className="flex justify-between items-start relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${meta.bg} ${meta.border}`}>
-                        <Icon className={`w-6 h-6 text-${meta.color}-400`} />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 dark:text-foreground tracking-tight">{prompt.name}</h3>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className={`w-2 h-2 rounded-full bg-${meta.color}-400 animate-pulse`}></span>
-                          <span className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-widest">Active Agent</span>
+                  <div>
+                    <div className="flex justify-between items-start gap-3 mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${meta.bg} ${meta.color}`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{prompt.name}</h3>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                            Active Agent Template
+                          </span>
                         </div>
                       </div>
+                      
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={() => handleCopy(prompt.id, prompt.system_prompt)}
+                          className="p-1.5 rounded-md border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                          title="Copy Prompt"
+                        >
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                        {canEdit && (
+                          <button 
+                            onClick={() => openEditModal(prompt)}
+                            className="px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-xs font-medium border border-border transition-colors flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3 h-3" /> Edit
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleCopy(prompt.id, prompt.system_prompt)}
-                        className="p-2 rounded-lg bg-slate-100 dark:bg-secondary hover:bg-white/10 border border-slate-200 dark:border-border transition-colors"
-                        title="Copy Prompt"
-                      >
-                        {isCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-700 dark:text-muted-foreground" />}
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="flex-1 bg-black/20 rounded-2xl p-4 border border-slate-200 dark:border-border relative z-10 group-hover:border-slate-200 dark:border-border transition-colors">
-                    <p className="text-sm text-slate-700 dark:text-muted-foreground font-mono leading-relaxed line-clamp-4">
+                    <div className="bg-secondary/40 rounded-lg p-3 border border-border font-mono text-xs text-foreground/80 leading-relaxed max-h-32 overflow-y-auto">
                       {prompt.system_prompt}
-                    </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 relative z-10">
-                    <div className="flex flex-wrap gap-2">
-                      {meta.tags.map(tag => (
-                        <span key={tag} className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-muted-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    
-                    {canEdit && (
-                      <button 
-                        onClick={() => openEditModal(prompt)}
-                        className="text-[11px] font-bold uppercase tracking-widest text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
-                      >
-                        Edit <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                  <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border flex-wrap">
+                    {meta.tags.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary text-muted-foreground border border-border">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-          </motion.div>
-        )}
-
-        {!loading && filteredPrompts.length === 0 && (
-          <div className="flex flex-col items-center justify-center p-20 text-center">
-            <TerminalSquare className="w-16 h-16 text-slate-700 mb-4" />
-            <h3 className="text-xl font-bold text-slate-900 dark:text-foreground mb-2">No prompts found</h3>
-            <p className="text-slate-800 dark:text-muted-foreground">Try adjusting your search criteria.</p>
           </div>
         )}
 
@@ -266,80 +222,78 @@ export default function Prompts() {
       <AnimatePresence>
         {editingPrompt && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeEditModal}
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-            ></motion.div>
+              className="absolute inset-0 bg-black/60"
+            />
 
-            {/* Modal Body */}
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0b1020] border border-slate-200 dark:border-border rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10"
+              className="bg-card border border-border rounded-xl w-full max-w-xl overflow-hidden shadow-xl relative z-10 flex flex-col"
             >
-              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-border">
-                <div className="flex items-center gap-3">
-                  <Edit3 className="w-5 h-5 text-purple-400" />
-                  <h3 className="text-lg font-black text-slate-900 dark:text-foreground">Edit {editingPrompt.name} System Prompt</h3>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Edit System Instruction: {editingPrompt.name}</h3>
                 </div>
                 <button 
                   onClick={closeEditModal}
-                  className="p-1 rounded-lg text-slate-700 dark:text-muted-foreground hover:text-slate-900 dark:text-foreground hover:bg-slate-100 dark:bg-secondary transition-colors"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-6 flex flex-col gap-4">
+              <div className="p-4 space-y-3">
                 {errorMsg && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex gap-3 text-red-200 text-sm">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-2 text-destructive text-xs">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>{errorMsg}</span>
                   </div>
                 )}
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-[#8b92a5] uppercase tracking-wider">System Instruction</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">System Prompt & Grounding Rules</label>
                   <textarea 
                     rows={8}
                     value={editingPrompt.system_prompt}
                     onChange={e => setEditingPrompt(prev => ({ ...prev, system_prompt: e.target.value }))}
-                    className="w-full p-4 bg-black/40 border border-slate-200 dark:border-border rounded-2xl text-sm font-mono leading-relaxed focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 text-slate-200"
-                    placeholder="Enter the system behavior instructions for this agent..."
+                    className="w-full p-3 bg-background border border-border rounded-lg text-xs font-mono leading-relaxed text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                    placeholder="Enter instructions..."
                   />
                 </div>
               </div>
 
-              <div className="p-6 bg-black/20 border-t border-slate-200 dark:border-border flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="p-3.5 bg-secondary/40 border-t border-border flex items-center justify-between text-xs">
                 <button
                   onClick={() => handleResetPrompt(editingPrompt.id)}
                   disabled={updating || resetting}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 dark:bg-secondary hover:bg-red-500/10 hover:text-red-400 border border-slate-200 dark:border-border hover:border-red-500/20 text-slate-700 dark:text-muted-foreground text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all"
+                  className="px-3 py-1.5 bg-card hover:bg-destructive/10 hover:text-destructive border border-border rounded-lg text-xs font-medium text-muted-foreground flex items-center gap-1.5 transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Reset Default
+                  <span>Reset Default</span>
                 </button>
 
-                <div className="flex gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={closeEditModal}
                     disabled={updating || resetting}
-                    className="w-1/2 sm:w-auto px-5 py-2.5 bg-slate-100 dark:bg-secondary hover:bg-white/10 border border-slate-200 dark:border-border text-slate-700 dark:text-muted-foreground text-xs font-bold uppercase tracking-wider rounded-xl transition-colors"
+                    className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdatePrompt}
                     disabled={updating || resetting}
-                    className="w-1/2 sm:w-auto px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 transition-all"
+                    className="px-3.5 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    {updating ? 'Saving...' : 'Save Changes'}
+                    <span>{updating ? 'Saving...' : 'Save Instruction'}</span>
                   </button>
                 </div>
               </div>
@@ -350,5 +304,3 @@ export default function Prompts() {
     </div>
   );
 }
-
-
