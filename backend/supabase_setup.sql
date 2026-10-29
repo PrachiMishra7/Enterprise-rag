@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS query_logs (
     id VARCHAR PRIMARY KEY,
     user_id VARCHAR REFERENCES users(id) ON DELETE SET NULL,
     query VARCHAR NOT NULL,
+    answer TEXT,
+    citations TEXT,
     agent VARCHAR DEFAULT 'general',
     confidence_score INTEGER DEFAULT 0,
     hallucination_detected BOOLEAN DEFAULT FALSE,
@@ -61,6 +63,24 @@ CREATE TABLE IF NOT EXISTS query_logs (
     context_relevance_score INTEGER DEFAULT 0,
     faithfulness_score INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR PRIMARY KEY,
+    value TEXT NOT NULL,
+    description VARCHAR,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS data_connectors (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    desc_text VARCHAR NOT NULL,
+    status VARCHAR DEFAULT 'disconnected',
+    last_sync VARCHAR DEFAULT 'Never',
+    doc_count INTEGER DEFAULT 0,
+    config TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- INDEXES FOR FAST DEPARTMENT FILTERING

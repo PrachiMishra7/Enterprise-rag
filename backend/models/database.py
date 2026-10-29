@@ -65,6 +65,8 @@ class QueryLog(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"))
     query = Column(String, nullable=False)
+    answer = Column(Text, nullable=True) # Full AI response stored in DB
+    citations = Column(Text, nullable=True) # JSON serialized citations stored in DB
     agent = Column(String, default="general")
     confidence_score = Column(Integer, default=0) # Storing as 0-100 integer for simplicity
     hallucination_detected = Column(Boolean, default=False)
@@ -82,5 +84,25 @@ class AgentPrompt(Base):
     id = Column(String, primary_key=True) # e.g. 'hr', 'legal', 'finance', 'it', 'general'
     name = Column(String, nullable=False)
     system_prompt = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+
+    key = Column(String, primary_key=True)
+    value = Column(Text, nullable=False)
+    description = Column(String, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class DataConnector(Base):
+    __tablename__ = "data_connectors"
+
+    id = Column(String, primary_key=True) # e.g. 'gdrive', 'slack', 'github', 'notion', 'confluence'
+    name = Column(String, nullable=False)
+    desc = Column(String, nullable=False)
+    status = Column(String, default="disconnected") # 'connected', 'disconnected', 'configuring'
+    last_sync = Column(String, default="Never")
+    doc_count = Column(Integer, default=0)
+    config = Column(Text, nullable=True) # JSON configuration
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

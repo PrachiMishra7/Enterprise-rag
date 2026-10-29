@@ -2,36 +2,39 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
 import Loader from '../components/Loader';
-import { Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, X, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { 
+  Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, 
+  Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, 
+  X, ThumbsUp, ThumbsDown, History, MessageSquare, Clock, Plus, 
+  Trash2, ChevronRight, ArrowRight
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const AGENTS = [
   { 
     id: 'auto', name: 'Auto-Detect Router', desc: 'Dynamically routes query to the best expert', 
-    icon: Sparkles, color: 'text-blue-400', bg: 'bg-blue-500/10',
+    icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/10',
     provider: 'Enterprise Edge', model: 'Ensemble Routing', latency: '~1.2s', tag: 'Recommended'
   },
   { 
     id: 'hr', name: 'HR Expert', desc: 'Trained on company policies, benefits, and culture', 
-    icon: Users, color: 'text-emerald-400', bg: 'bg-emerald-500/10',
+    icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-500/10',
     provider: 'Azure OpenAI', model: 'GPT-4o', latency: '~800ms', tag: 'High Quality'
   },
   { 
     id: 'legal', name: 'Legal Counsel', desc: 'Specialized in contracts, compliance, and NDAs', 
-    icon: Scale, color: 'text-purple-400', bg: 'bg-purple-500/10',
+    icon: Scale, color: 'text-purple-500', bg: 'bg-purple-500/10',
     provider: 'AWS Bedrock', model: 'Claude 3.5 Sonnet', latency: '~900ms', tag: 'High Accuracy'
   },
   { 
     id: 'finance', name: 'Finance Analyst', desc: 'Access to payroll, expenses, and budgets', 
-    icon: Landmark, color: 'text-amber-400', bg: 'bg-amber-500/10',
+    icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10',
     provider: 'Groq', model: 'Llama 3.1 70B', latency: '~300ms', tag: 'Ultra Fast'
   },
   { 
     id: 'it', name: 'IT Support', desc: 'Hardware troubleshooting and tech policies', 
-    icon: Monitor, color: 'text-orange-400', bg: 'bg-orange-500/10',
+    icon: Monitor, color: 'text-orange-500', bg: 'bg-orange-500/10',
     provider: 'Groq', model: 'Llama 3.1 8B', latency: '~200ms', tag: 'Fast'
   },
 ];
@@ -41,7 +44,7 @@ export default function Chat({ queryInput, setQueryInput }) {
   const [targetAgent, setTargetAgent] = useState('auto');
   const [messages, setMessages] = useState([{
     role: 'ai',
-    content: `Hello ${user?.name}! I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
+    content: `Hello ${user?.name || 'there'}! I'm your Enterprise AI Assistant. I can help you find information from company documents. What would you like to know?`,
     agent: 'general',
     confidence: 0.9,
     hallucination: false,
@@ -49,6 +52,9 @@ export default function Chat({ queryInput, setQueryInput }) {
   }]);
   const [typing, setTyping] = useState(false);
   const [isAgentDropdownOpen, setIsAgentDropdownOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyItems, setHistoryItems] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -59,13 +65,33 @@ export default function Chat({ queryInput, setQueryInput }) {
     scrollToBottom();
   }, [messages, typing]);
 
-  const sendQuery = async () => {
-    const query = queryInput.trim();
+  // Load chat history from backend query logs
+  const fetchChatHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const data = await apiCall('GET', '/query/history', null, false, token);
+      setHistoryItems(data || []);
+    } catch (e) {
+      console.error('Failed to load history:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchChatHistory();
+    }
+  }, [token]);
+
+  const sendQuery = async (overrideText) => {
+    const textToSend = typeof overrideText === 'string' ? overrideText : queryInput;
+    const query = textToSend.trim();
     if (!query || typing) return;
 
     const newMessages = [...messages, { role: 'user', content: query }];
     setMessages(newMessages);
-    setQueryInput('');
+    if (!overrideText) setQueryInput('');
     setTyping(true);
 
     try {
@@ -79,6 +105,8 @@ export default function Chat({ queryInput, setQueryInput }) {
         citations: data.citations || [],
         query_id: data.query_id
       }]);
+      // Update history list in background
+      fetchChatHistory();
     } catch (e) {
       setMessages([...newMessages, {
         role: 'ai',
@@ -109,245 +137,410 @@ export default function Chat({ queryInput, setQueryInput }) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-transparent w-full max-w-5xl mx-auto px-3 sm:px-6 relative z-10">
-      <div className="flex-1 overflow-y-auto py-6 sm:py-8 flex flex-col gap-6 scroll-smooth relative z-10">
-        <AnimatePresence>
-        {messages.map((m, i) => (
-          <motion.div 
-            initial={{ opacity: 0, y: 15, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            key={i} 
-            className={`flex gap-3 sm:gap-4 max-w-full ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
-          >
-            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${
-              m.role === 'user' ? 'bg-primary text-white border-primary' : 'bg-card text-foreground border-border/80'
-            }`}>
-              {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-primary" />}
-            </div>
-            
-            <div className={`flex flex-col max-w-[90%] sm:max-w-[82%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`text-sm leading-relaxed ${
-                m.role === 'user' 
-                  ? 'bg-primary text-white shadow-xs px-4 py-3 rounded-2xl rounded-tr-xs border border-transparent whitespace-pre-wrap' 
-                  : 'bg-card/90 border border-border/80 px-4 sm:px-5 py-3.5 rounded-2xl rounded-tl-xs shadow-xs text-foreground w-full'
-              }`}>
-                {m.role === 'user' ? m.content : (
-                  <MarkdownRenderer>{m.content}</MarkdownRenderer>
-                )}
-              </div>
+  const startNewChat = () => {
+    setMessages([{
+      role: 'ai',
+      content: `Hello ${user?.name || 'there'}! Started a fresh conversation. How can I help you today?`,
+      agent: 'general',
+      confidence: 0.9,
+      hallucination: false,
+      citations: []
+    }]);
+  };
 
-              {m.role === 'ai' && m.agent && m.agent !== 'general' && (
-                <div className="flex items-center gap-3 mt-3 flex-wrap">
-                  <div className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-secondary text-muted-foreground border border-border tracking-wider">
-                    {m.agent} Agent
+  const loadPastQuery = (item) => {
+    // Restore both the user question and the stored AI answer into the chat messages
+    setMessages([
+      {
+        role: 'user',
+        content: item.query
+      },
+      {
+        role: 'ai',
+        content: item.answer || 'Response recorded.',
+        agent: item.agent || 'general',
+        confidence: item.confidence_score !== undefined ? item.confidence_score : 0.9,
+        hallucination: Boolean(item.hallucination_detected),
+        citations: item.citations || [],
+        query_id: item.id
+      }
+    ]);
+    if (item.agent && item.agent !== 'general') {
+      setTargetAgent(item.agent);
+    }
+    setShowHistory(false);
+  };
+
+  const formatTimestamp = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="flex h-full w-full bg-background text-foreground overflow-hidden relative">
+      
+      {/* ── Main Chat Container ── */}
+      <div className="flex-1 flex flex-col h-full max-w-5xl mx-auto px-3 sm:px-6 relative z-10 w-full overflow-hidden">
+        
+        {/* Chat Control Toolbar */}
+        <div className="flex items-center justify-between py-2.5 border-b border-border text-xs">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={startNewChat}
+              className="px-2.5 py-1.5 rounded-lg border border-border bg-card hover:bg-secondary text-foreground flex items-center gap-1.5 transition-colors font-medium shadow-xs"
+              title="Start a new thread"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Thread</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                setShowHistory(!showHistory);
+                if (!showHistory) fetchChatHistory();
+              }}
+              className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all font-medium shadow-xs ${
+                showHistory 
+                  ? 'border-primary bg-primary/10 text-primary' 
+                  : 'border-border bg-card hover:bg-secondary text-foreground'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Chat History</span>
+              {historyItems.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-secondary text-muted-foreground font-bold">
+                  {historyItems.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground hidden sm:flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>RAG Grounded Retrieval Active</span>
+          </div>
+        </div>
+
+        {/* Message Stream */}
+        <div className="flex-1 overflow-y-auto py-5 sm:py-6 flex flex-col gap-5 scroll-smooth relative z-10">
+          <AnimatePresence>
+            {messages.map((m, i) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                key={i} 
+                className={`flex gap-3 sm:gap-4 max-w-full ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
+              >
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-xs ${
+                  m.role === 'user' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-foreground border-border/80'
+                }`}>
+                  {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-primary" />}
+                </div>
+                
+                <div className={`flex flex-col max-w-[90%] sm:max-w-[82%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`text-sm leading-relaxed ${
+                    m.role === 'user' 
+                      ? 'bg-primary text-primary-foreground shadow-xs px-4 py-3 rounded-2xl rounded-tr-xs border border-transparent whitespace-pre-wrap' 
+                      : 'bg-card border border-border px-4 sm:px-5 py-3.5 rounded-2xl rounded-tl-xs shadow-xs text-foreground w-full'
+                  }`}>
+                    {m.role === 'user' ? m.content : (
+                      <MarkdownRenderer>{m.content}</MarkdownRenderer>
+                    )}
                   </div>
-                  {m.confidence !== undefined && (
-                    <div className="flex items-center gap-2 bg-background px-2 py-1 rounded border border-border">
-                      <span className="text-[10px] text-muted-foreground font-semibold">CONFIDENCE</span>
-                      <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${m.confidence >= 0.7 ? 'bg-green-500' : m.confidence >= 0.45 ? 'bg-amber-500' : 'bg-red-500'}`} 
-                          style={{ width: `${Math.round(m.confidence * 100)}%` }}
-                        ></div>
+
+                  {m.role === 'ai' && m.agent && m.agent !== 'general' && (
+                    <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
+                      <div className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border tracking-wider">
+                        {m.agent} Agent
                       </div>
-                      <span className="text-[10px] text-foreground font-bold">{Math.round(m.confidence * 100)}%</span>
+                      {m.confidence !== undefined && (
+                        <div className="flex items-center gap-2 bg-card px-2 py-0.5 rounded border border-border">
+                          <span className="text-[9px] text-muted-foreground font-semibold">CONFIDENCE</span>
+                          <div className="w-14 h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full ${m.confidence >= 0.7 ? 'bg-emerald-500' : m.confidence >= 0.45 ? 'bg-amber-500' : 'bg-rose-500'}`} 
+                              style={{ width: `${Math.round(m.confidence * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-foreground font-bold">{Math.round(m.confidence * 100)}%</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {m.role === 'ai' && m.citations && m.citations.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-2 w-full">
+                      <div className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                        <FileText className="w-3 h-3 text-primary" /> Sources & Citations:
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {m.citations.map((c, ci) => (
+                          <div key={ci} className="bg-card border border-border p-2.5 rounded-xl text-xs flex flex-col justify-between shadow-xs">
+                            <p className="text-foreground/90 italic line-clamp-2 leading-relaxed">"{c.text}"</p>
+                            <span className="text-[9px] font-bold text-primary truncate mt-1.5">{c.source}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {m.role === 'ai' && i > 0 && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button 
+                        onClick={() => handleFeedback(m.query_id, 1, i)} 
+                        className={`p-1.5 rounded-lg border transition-colors ${m.feedback === 1 ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
+                        title="Helpful"
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                      </button>
+                      <button 
+                        onClick={() => handleFeedback(m.query_id, -1, i)} 
+                        className={`p-1.5 rounded-lg border transition-colors ${m.feedback === -1 ? 'bg-rose-500/20 text-rose-500 border-rose-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
+                        title="Inaccurate / Hallucinated"
+                      >
+                        <ThumbsDown className="w-3 h-3" />
+                      </button>
                     </div>
                   )}
                 </div>
-              )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-              {m.hallucination && (
-                <div className="flex items-center gap-2 text-xs font-medium text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-md px-3 py-2 mt-3 w-fit">
-                  <AlertTriangle className="w-4 h-4" />
-                  Potential hallucination detected. Verify claims against sources.
-                </div>
-              )}
+          {typing && (
+            <div className="flex gap-3 items-center text-muted-foreground text-xs p-2">
+              <Loader size="sm" />
+              <span>Synthesizing enterprise context across knowledge chunks...</span>
+            </div>
+          )}
 
-              {m.citations && m.citations.length > 0 && (
-                <div className="mt-4 w-full">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                    <FileText className="w-3 h-3" /> Sources
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Bottom Prompt Bar & Agent Selector */}
+        <div className="p-3 sm:p-4 bg-card/90 backdrop-blur-md rounded-2xl border border-border mb-4 shadow-sm relative">
+          
+          {/* Agent Picker Header */}
+          <div className="flex items-center justify-between mb-3 border-b border-border pb-2.5">
+            <button 
+              onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
+              className="flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-foreground transition-colors"
+            >
+              <Cpu className="w-3.5 h-3.5 text-primary" />
+              <span>Target Expert: <strong>{AGENTS.find(a => a.id === targetAgent)?.name}</strong></span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAgentDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {/* Textarea Input */}
+          <div className="flex gap-2.5 items-end relative">
+            <textarea 
+              className="flex-1 min-h-[50px] max-h-32 p-3 pr-12 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow shadow-xs" 
+              placeholder="Ask anything across indexed policies, contracts, or engineering docs..." 
+              value={queryInput}
+              onChange={e => setQueryInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows="1"
+            />
+            <button 
+              className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg flex items-center justify-center transition-all disabled:opacity-40 shadow-xs" 
+              onClick={() => sendQuery()} 
+              disabled={!queryInput.trim() || typing}
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Agent Selector Centered Modal (High z-index) ── */}
+      <AnimatePresence>
+        {isAgentDropdownOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAgentDropdownOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+
+            {/* Modal Dialog */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="bg-card border border-border rounded-2xl shadow-2xl z-10 w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between bg-secondary/30">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                    <Cpu className="w-4 h-4" />
                   </div>
-                  <div className="grid gap-2">
-                    {m.citations.slice(0, 3).map((c, idx) => (
-                      <div key={idx} className="text-xs text-muted-foreground p-3 bg-background rounded-md border border-border border-l-2 border-l-primary hover:bg-secondary/50 transition-colors cursor-default">
-                        <div className="font-semibold text-primary mb-1 line-clamp-1">{c.source}</div>
-                        <div className="line-clamp-2 leading-relaxed opacity-90">
-                          "{c.text}"
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Select AI Routing Agent</h3>
+                    <p className="text-[11px] text-muted-foreground">Direct your question to a dedicated specialist or use auto-routing</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setIsAgentDropdownOpen(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer transition-colors"
+                  title="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-2.5">
+                {AGENTS.map(agent => {
+                  const isSelected = targetAgent === agent.id;
+                  return (
+                    <button 
+                      key={agent.id}
+                      type="button"
+                      onClick={() => {
+                        setTargetAgent(agent.id);
+                        setIsAgentDropdownOpen(false);
+                      }}
+                      className={`w-full p-3.5 rounded-xl border text-left cursor-pointer transition-all flex items-start gap-3.5 ${
+                        isSelected 
+                          ? 'border-primary bg-primary/10 shadow-xs ring-2 ring-primary/30' 
+                          : 'border-border hover:bg-secondary/70 bg-card hover:border-border/80'
+                      }`}
+                    >
+                      <div className={`p-2.5 rounded-xl shrink-0 ${agent.bg} ${agent.color}`}>
+                        <agent.icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-sm font-bold text-foreground">{agent.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-secondary text-muted-foreground border border-border">
+                              {agent.tag}
+                            </span>
+                            {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{agent.desc}</p>
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono mt-2 pt-2 border-t border-border/60">
+                          <span>{agent.provider} ({agent.model})</span>
+                          <span className="text-amber-500 font-semibold">{agent.latency}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </button>
+                  );
+                })}
+              </div>
 
-              {m.role === 'ai' && m.query_id && (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/10 w-full">
-                  <span className="text-[10px] text-muted-foreground font-bold uppercase mr-2">Was this helpful?</span>
-                  <button 
-                    onClick={() => handleFeedback(m.query_id, 1, i)}
-                    className={`p-1.5 rounded-lg transition-colors ${m.feedback === 1 ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-emerald-500'}`}
-                    disabled={m.feedback !== undefined}
-                  >
-                    <ThumbsUp className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleFeedback(m.query_id, -1, i)}
-                    className={`p-1.5 rounded-lg transition-colors ${m.feedback === -1 ? 'bg-rose-500/20 text-rose-500' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-rose-500'}`}
-                    disabled={m.feedback !== undefined}
-                  >
-                    <ThumbsDown className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        ))}
-        </AnimatePresence>
-
-        {typing && (
-          <div className="flex gap-3 items-center p-3 rounded-2xl bg-card border border-border w-fit animate-in slide-in-from-bottom-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-primary" />
-            </div>
-            <Loader size="sm" text="Agent is reasoning & searching knowledge base…" variant="dots" />
+              <div className="p-3.5 bg-secondary/30 border-t border-border flex justify-end">
+                <button 
+                  type="button"
+                  onClick={() => setIsAgentDropdownOpen(false)}
+                  className="px-4 py-1.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold hover:bg-secondary transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
-        <div ref={messagesEndRef} className="h-4" />
-      </div>
+      </AnimatePresence>
 
-      <div className="p-3 sm:p-5 border-t border-border/80 bg-card/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl mx-0 sm:mx-2 mb-3 mt-auto shrink-0 relative z-50 shadow-sm border">
-        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
-          {['What is the remote work policy?', 'Summarize the NDA', 'How to claim expenses?'].map(q => (
-            <button 
-              key={q} 
-              className="px-3 py-1.5 bg-background border border-border/70 hover:border-primary/50 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-all cursor-pointer shadow-xs"
-              onClick={() => { setQueryInput(q); }}
+      {/* ── Slide-over History Drawer ── */}
+      <AnimatePresence>
+        {showHistory && (
+          <>
+            {/* Backdrop for mobile */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistory(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 sm:hidden"
+            />
+
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed sm:relative right-0 top-0 bottom-0 w-80 sm:w-88 bg-card border-l border-border z-40 flex flex-col h-full shadow-2xl sm:shadow-none"
             >
-              {q}
-            </button>
-          ))}
-        </div>
-        
-        <div className="relative mb-3 flex items-center z-50">
-          <button 
-            className="flex items-center justify-between w-full sm:w-[320px] px-3.5 py-2.5 bg-background border border-border/80 hover:border-primary/50 rounded-xl text-left transition-all group shadow-xs cursor-pointer"
-            onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
-            disabled={typing}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`w-8 h-8 rounded-lg flex shrink-0 items-center justify-center border border-border/50 ${AGENTS.find(a => a.id === targetAgent)?.bg || 'bg-primary/10'} ${AGENTS.find(a => a.id === targetAgent)?.color || 'text-primary'}`}>
-                {(() => { const Icon = AGENTS.find(a => a.id === targetAgent)?.icon || Sparkles; return <Icon className="w-4 h-4" /> })()}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-foreground truncate">{AGENTS.find(a => a.id === targetAgent)?.name || 'Auto-Detect Router'}</span>
-                  <span className="px-1.5 py-0.2 rounded bg-secondary text-[9px] font-semibold text-muted-foreground">{AGENTS.find(a => a.id === targetAgent)?.provider || 'Enterprise Edge'}</span>
+              {/* History Header */}
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Query History</h3>
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate">{AGENTS.find(a => a.id === targetAgent)?.desc || 'Dynamically routes query to the best expert'}</div>
-              </div>
-            </div>
-            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${isAgentDropdownOpen ? 'rotate-180 text-foreground' : ''}`} />
-          </button>
-
-          <AnimatePresence>
-            {isAgentDropdownOpen && (
-              <>
-                {/* Backdrop overlay for focus */}
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-                  onClick={() => setIsAgentDropdownOpen(false)}
-                />
-                
-                <motion.div 
-                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute bottom-full mb-4 left-0 w-[480px] bg-white dark:bg-[#0f1525] border border-slate-200 dark:border-white/10 rounded-2xl p-2 z-50 shadow-[0_20px_60px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1 overflow-hidden"
+                <button 
+                  onClick={() => setShowHistory(false)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary"
                 >
-                  <div className="px-4 py-3 mb-1 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                    <div className="text-[10px] font-black text-slate-800 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <Server className="w-3.5 h-3.5" /> Execution Environment
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-[10px] font-bold text-slate-600 dark:text-slate-500 uppercase">Provider / Latency</div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setIsAgentDropdownOpen(false); }}
-                        className="p-1 rounded-md text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                        title="Close"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pb-1">
-                    {AGENTS.map(agent => (
-                      <div
-                        key={agent.id}
-                        className={`flex items-start gap-4 w-full p-3.5 rounded-xl text-left transition-all cursor-pointer relative overflow-hidden group ${targetAgent === agent.id ? 'bg-primary/5 dark:bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-slate-100 dark:bg-white/5 border border-transparent'}`}
-                        onClick={() => { setTargetAgent(agent.id); setIsAgentDropdownOpen(false); }}
-                      >
-                        {targetAgent === agent.id && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl shadow-sm"></div>
-                        )}
-                        <div className={`w-10 h-10 rounded-lg flex shrink-0 items-center justify-center border border-slate-200 dark:border-white/10 ${agent.bg} ${agent.color}`}>
-                          <agent.icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-slate-900 dark:text-white">{agent.name}</span>
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-widest ${targetAgent === agent.id ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground' : 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-500 dark:text-slate-300'}`}>
-                                {agent.tag}
-                              </span>
-                            </div>
-                            {targetAgent === agent.id && <Check className="w-4 h-4 text-primary shrink-0" />}
-                          </div>
-                          
-                          <div className="text-xs text-slate-800 dark:text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-3 truncate">{agent.desc}</div>
-                          
-                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-slate-800 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-black/20 p-2 rounded-lg border border-slate-100 dark:border-white/5">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <Cpu className="w-3.5 h-3.5 text-slate-700 dark:text-slate-400 shrink-0" /> 
-                              <span className="truncate">{agent.provider} ({agent.model})</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" /> {agent.latency}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-        <div className="flex gap-3 items-end relative">
-          <textarea 
-            className="flex-1 min-h-[56px] max-h-32 p-4 pr-14 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-2xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow shadow-sm" 
-            placeholder="Ask a question about enterprise documents..." 
-            value={queryInput}
-            onChange={e => setQueryInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows="1"
-          />
-          <button 
-            className="absolute right-3 bottom-3 w-10 h-10 bg-primary hover:opacity-90 text-primary-foreground rounded-xl flex items-center justify-center transition-all disabled:opacity-50 shadow-sm" 
-            onClick={sendQuery} 
-            disabled={!queryInput.trim() || typing}
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+              {/* History Content */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {loadingHistory ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground space-y-2">
+                    <Loader size="sm" />
+                    <span className="text-xs">Fetching past conversations...</span>
+                  </div>
+                ) : historyItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground space-y-2">
+                    <MessageSquare className="w-8 h-8 opacity-40 text-muted-foreground" />
+                    <p className="text-xs font-semibold text-foreground">No queries recorded yet</p>
+                    <p className="text-[10px]">Your asked questions and grounded responses will be stored here.</p>
+                  </div>
+                ) : (
+                  historyItems.map((item) => (
+                    <div 
+                      key={item.id}
+                      onClick={() => loadPastQuery(item)}
+                      className="p-3 rounded-xl border border-border hover:border-primary/40 bg-secondary/30 hover:bg-secondary/70 transition-all cursor-pointer group text-left"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <span className="text-xs font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                          {item.query}
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span className="px-1.5 py-0.5 rounded bg-card border border-border uppercase font-mono text-[9px]">
+                          {item.agent || 'general'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" /> {formatTimestamp(item.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* History Footer */}
+              <div className="p-3 border-t border-border bg-secondary/20 flex justify-between items-center text-[11px] text-muted-foreground">
+                <span>Click query to reload input</span>
+                <button 
+                  onClick={fetchChatHistory}
+                  className="text-primary hover:underline font-semibold"
+                >
+                  Refresh
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

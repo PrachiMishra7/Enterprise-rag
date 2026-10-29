@@ -10,6 +10,7 @@ from .tools import router as tools_router
 from .eval import router as eval_router
 from .knowledge_graph import router as kg_router
 from .users import router as users_router
+from .system import router as system_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -22,3 +23,4 @@ api_router.include_router(audit_router, prefix="/audit", tags=["audit"])
 api_router.include_router(tools_router, prefix="/tools", tags=["tools"])
 api_router.include_router(eval_router, prefix="/eval", tags=["eval"])
 api_router.include_router(kg_router, prefix="/kg", tags=["knowledge-graph"])
+api_router.include_router(system_router, tags=["system"])

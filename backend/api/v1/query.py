@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import json
 
 from database import get_db
 from api.dependencies import get_current_user
@@ -78,10 +79,12 @@ async def query(request: QueryRequest, current_user: dict = Depends(get_current_
     relevance = 40 if hallucination_result["hallucination_detected"] else 92
     faithfulness = 35 if hallucination_result["hallucination_detected"] else 88
 
-    # Log query to database
+    # Log query to database with full answer and citations
     query_log = QueryLog(
         user_id=current_user["id"],
         query=request.query,
+        answer=final_answer,
+        citations=json.dumps(agent_response.get("citations", [])),
         agent=agent_response["agent"],
         confidence_score=int(hallucination_result["confidence_score"] * 100),
         hallucination_detected=hallucination_result["hallucination_detected"],
@@ -114,3 +117,37 @@ async def submit_feedback(query_id: str, feedback_req: FeedbackRequest, current_
     query_log.user_feedback = feedback_req.feedback
     db.commit()
     return {"message": "Feedback recorded successfully"}
+
+@router.get("/history")
+async def get_user_chat_history(
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Fetch recent queries by current user or all if admin
+    query_filter = db.query(QueryLog)
+    if current_user.get("role") != "admin":
+        query_filter = query_filter.filter(QueryLog.user_id == current_user.get("id"))
+    
+    logs = query_filter.order_by(QueryLog.created_at.desc()).limit(limit).all()
+    
+    result = []
+    for log in logs:
+        parsed_citations = []
+        if log.citations:
+            try:
+                parsed_citations = json.loads(log.citations)
+            except Exception:
+                parsed_citations = []
+
+        result.append({
+            "id": log.id,
+            "query": log.query,
+            "answer": log.answer or "Response recorded.",
+            "citations": parsed_citations,
+            "agent": log.agent or "general",
+            "confidence_score": (log.confidence_score or 0) / 100.0 if (log.confidence_score and log.confidence_score > 1) else (log.confidence_score or 0.85),
+            "hallucination_detected": bool(log.hallucination_detected),
+            "timestamp": log.created_at.isoformat() if log.created_at else None
+        })
+    return result

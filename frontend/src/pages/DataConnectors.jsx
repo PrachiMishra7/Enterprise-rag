@@ -1,221 +1,202 @@
-﻿import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plug, Search, RefreshCw, CheckCircle2, AlertCircle, 
   ArrowRight, ToggleLeft, ToggleRight, Settings, Plus, MessageCircle, 
-  Code2, Database, HelpCircle, HardDrive, Compass, X
+  Code2, Database, HelpCircle, HardDrive, Compass, X, Loader2
 } from 'lucide-react';
+import { apiCall } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
-const CONNECTOR_TEMPLATES = [
-  { id: 'gdrive', name: 'Google Drive', desc: 'Sync files, documents, and spreadsheets from shared drives.', status: 'connected', lastSync: '10 mins ago', docCount: 142, icon: HardDrive, color: '#34a853', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
-  { id: 'slack', name: 'Slack', desc: 'Index messages, threads, and canvas documents from public channels.', status: 'disconnected', lastSync: 'Never', docCount: 0, icon: MessageCircle, color: '#e01e5a', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
-  { id: 'github', name: 'GitHub Repositories', desc: 'Ingest code bases, readmes, issues, and markdown docs from repositories.', status: 'connected', lastSync: '2 hours ago', docCount: 1834, icon: Code2, color: '#ffffff', bg: 'bg-white/10', border: 'border-white/30' },
-  { id: 'notion', name: 'Notion Workspace', desc: 'Import pages, databases, and workspace wikis.', status: 'configuring', lastSync: 'In Progress...', docCount: 0, icon: Compass, color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
-  { id: 'confluence', name: 'Atlassian Confluence', desc: 'Sync internal knowledge base articles and space documents.', status: 'disconnected', lastSync: 'Never', docCount: 0, icon: Database, color: '#0052cc', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }
-];
+const ICON_MAP = {
+  gdrive: { icon: HardDrive, color: '#34a853', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+  slack: { icon: MessageCircle, color: '#e01e5a', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
+  github: { icon: Code2, color: '#6366f1', bg: 'bg-indigo-500/10', border: 'border-indigo-500/30' },
+  notion: { icon: Compass, color: '#f59e0b', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+  confluence: { icon: Database, color: '#0052cc', bg: 'bg-blue-500/10', border: 'border-blue-500/30' }
+};
 
 export default function DataConnectors() {
-  const [connectors, setConnectors] = useState(CONNECTOR_TEMPLATES);
+  const { token, user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'it_admin';
+
+  const [connectors, setConnectors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [loadingId, setLoadingId] = useState(null);
   const [showConfig, setShowConfig] = useState(null);
+  const [notice, setNotice] = useState('');
 
-  const handleToggle = (id) => {
+  const fetchConnectors = async () => {
+    try {
+      setLoading(true);
+      const data = await apiCall('GET', '/connectors', null, false, token);
+      setConnectors(data || []);
+    } catch (e) {
+      console.error('Failed to load connectors:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchConnectors();
+  }, [token]);
+
+  const handleToggle = async (id) => {
     setLoadingId(id);
-    setTimeout(() => {
-      setConnectors(prev => prev.map(c => {
-        if (c.id === id) {
-          const newStatus = c.status === 'connected' ? 'disconnected' : 'connected';
-          return {
-            ...c,
-            status: newStatus,
-            lastSync: newStatus === 'connected' ? 'Just now' : 'Never',
-            docCount: newStatus === 'connected' ? Math.floor(Math.random() * 200) + 10 : 0
-          };
-        }
-        return c;
-      }));
+    setNotice('');
+    try {
+      const res = await apiCall('POST', `/connectors/${id}/toggle`, null, false, token);
+      setConnectors(prev => prev.map(c => c.id === id ? { ...c, ...res } : c));
+      setNotice(`Updated status for ${res.name || 'connector'}`);
+      setTimeout(() => setNotice(''), 3000);
+    } catch (e) {
+      alert(e.message || 'Failed to toggle connector');
+    } finally {
       setLoadingId(null);
-    }, 1200);
+    }
+  };
+
+  const handleSync = async (id) => {
+    setLoadingId(id);
+    try {
+      const res = await apiCall('POST', `/connectors/${id}/sync`, null, false, token);
+      setConnectors(prev => prev.map(c => c.id === id ? { ...c, ...res } : c));
+      setNotice(res.message || 'Sync complete');
+      setTimeout(() => setNotice(''), 3000);
+    } catch (e) {
+      alert(e.message || 'Sync failed');
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const filteredConnectors = connectors.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.desc.toLowerCase().includes(search.toLowerCase())
+    c.name?.toLowerCase().includes(search.toLowerCase()) || 
+    c.desc?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 dark:bg-background text-slate-900 dark:text-foreground overflow-y-auto relative">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-      
-      <div className="max-w-7xl mx-auto w-full p-6 md:p-10 relative z-10 flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col bg-background text-foreground overflow-y-auto">
+      <div className="max-w-7xl mx-auto w-full p-4 sm:p-8 space-y-6 flex-1 flex flex-col">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-border">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Plug className="w-8 h-8 text-blue-400 animate-pulse" />
-              <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-white via-blue-100 to-blue-200 bg-clip-text text-transparent">Data Connectors</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Plug className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Enterprise Data Connectors</h1>
             </div>
-            <p className="text-sm text-[#8b92a5] font-bold tracking-widest uppercase">Connect external data platforms directly to your vector storage.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage persistent integrations to sync remote enterprise repositories into vector embeddings.</p>
           </div>
-          
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-700 dark:text-muted-foreground" />
-            <input 
-              type="text" 
-              placeholder="Search cloud databases..." 
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-slate-800 dark:text-muted-foreground"
-            />
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input 
+                type="text" 
+                placeholder="Search platforms..." 
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
+              />
+            </div>
+            <button 
+              onClick={fetchConnectors}
+              className="p-2 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground"
+              title="Refresh integrations"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+            </button>
           </div>
         </div>
+
+        {notice && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{notice}</span>
+          </div>
+        )}
 
         {/* Connectors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredConnectors.map(conn => {
-            const Icon = conn.icon;
-            const isConnected = conn.status === 'connected';
-            const isConfiguring = conn.status === 'configuring';
-            
-            return (
-              <motion.div 
-                key={conn.id}
-                whileHover={{ y: -4 }}
-                className="bg-white/[0.02] backdrop-blur-2xl border border-slate-200 dark:border-border hover:border-blue-500/30 rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all shadow-lg hover:shadow-2xl"
-              >
-                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[40px] -mr-16 -mt-16 opacity-10 pointer-events-none`} style={{ backgroundColor: conn.color }}></div>
-                
-                <div className="flex justify-between items-start z-10">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${conn.bg} ${conn.border}`} style={{ color: conn.color }}>
-                    <Icon className="w-6 h-6" />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center p-16 text-muted-foreground space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm">Connecting to data integrations registry...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredConnectors.map((c) => {
+              const meta = ICON_MAP[c.id] || ICON_MAP.gdrive;
+              const Icon = meta.icon;
+              const isConn = c.status === 'connected';
+              const isLoading = loadingId === c.id;
+
+              return (
+                <div 
+                  key={c.id}
+                  className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between transition-all hover:border-primary/40 shadow-xs space-y-4"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`p-2.5 rounded-xl ${meta.bg} ${meta.border} border`}>
+                        <Icon className="w-5 h-5" style={{ color: meta.color }} />
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        isConn 
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-secondary text-muted-foreground border border-border'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isConn ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
+                        {c.status}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-card-foreground mb-1">{c.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{c.desc}</p>
                   </div>
-                  
-                  <button 
-                    disabled={loadingId === conn.id || isConfiguring}
-                    onClick={() => handleToggle(conn.id)}
-                    className="p-1 rounded-xl transition-opacity hover:opacity-85 disabled:opacity-50"
-                  >
-                    {loadingId === conn.id ? (
-                      <RefreshCw className="w-6 h-6 text-slate-700 dark:text-muted-foreground animate-spin" />
-                    ) : isConnected ? (
-                      <ToggleRight className="w-9 h-9 text-blue-500 cursor-pointer" />
-                    ) : (
-                      <ToggleLeft className="w-9 h-9 text-slate-600 cursor-pointer" />
-                    )}
-                  </button>
-                </div>
 
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-foreground mb-2">{conn.name}</h3>
-                  <p className="text-xs text-slate-700 dark:text-muted-foreground leading-relaxed min-h-[48px]">{conn.desc}</p>
-                </div>
+                  <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Indexed</span>
+                      <span className="font-bold text-foreground">{c.docCount || 0} docs</span>
+                    </div>
 
-                <div className="flex flex-col gap-2 pt-4 border-t border-slate-200 dark:border-border text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">
-                  <div className="flex justify-between">
-                    <span>Status:</span>
-                    <span className={isConnected ? 'text-emerald-400' : isConfiguring ? 'text-amber-400 animate-pulse' : 'text-slate-800 dark:text-muted-foreground'}>
-                      {conn.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Indexed Pages:</span>
-                    <span className="text-slate-900 dark:text-foreground">{conn.docCount}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Synced:</span>
-                    <span className="text-slate-900 dark:text-foreground">{conn.lastSync}</span>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-2">
+                      {isConn && (
+                        <button 
+                          disabled={isLoading}
+                          onClick={() => handleSync(c.id)}
+                          className="px-2.5 py-1 rounded-lg border border-border bg-secondary/50 hover:bg-secondary text-[11px] font-medium text-foreground transition-colors flex items-center gap-1"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                          Sync
+                        </button>
+                      )}
 
-                <div className="flex justify-end gap-2 mt-2 pt-2 z-10">
-                  <button 
-                    onClick={() => setShowConfig(conn)}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border hover:border-blue-500/30 hover:bg-white/10 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-muted-foreground flex items-center gap-1 transition-all"
-                  >
-                    <Settings className="w-3.5 h-3.5" /> Configure
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Configuration Modal */}
-        <AnimatePresence>
-          {showConfig && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowConfig(null)}
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              ></motion.div>
-
-              <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-[#0b1020] border border-slate-200 dark:border-border rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative z-10"
-              >
-                <div className="p-6 border-b border-slate-200 dark:border-border flex items-center justify-between">
-                  <h3 className="text-md font-black tracking-tight text-slate-900 dark:text-foreground uppercase flex items-center gap-2">
-                    <Plug className="w-5 h-5 text-blue-400" />
-                    Configure {showConfig.name}
-                  </h3>
-                  <button 
-                    onClick={() => setShowConfig(null)}
-                    className="p-1 rounded-lg text-slate-700 dark:text-muted-foreground hover:text-slate-900 dark:text-foreground"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="p-6 space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">Access Token / API Key</label>
-                    <input 
-                      type="password" 
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                      className="w-full px-3 py-2.5 bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-foreground"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-[#8b92a5] uppercase tracking-wider">Folder ID / Target Channel</label>
-                    <input 
-                      type="text" 
-                      placeholder="root"
-                      className="w-full px-3 py-2.5 bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-500/50 text-slate-900 dark:text-foreground"
-                    />
+                      <button 
+                        disabled={isLoading || !isAdmin}
+                        onClick={() => handleToggle(c.id)}
+                        className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                          isConn 
+                            ? 'bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border border-rose-500/20' 
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        }`}
+                      >
+                        {isLoading ? 'Updating...' : isConn ? 'Disconnect' : 'Connect'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="p-6 bg-black/20 border-t border-slate-200 dark:border-border flex justify-end gap-3">
-                  <button 
-                    onClick={() => setShowConfig(null)}
-                    className="px-4 py-2 bg-slate-100 dark:bg-secondary border border-slate-200 dark:border-border text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-white/10 text-slate-700 dark:text-muted-foreground"
-                  >
-                    Close
-                  </button>
-                  <button 
-                    onClick={() => {
-                      handleToggle(showConfig.id);
-                      setShowConfig(null);
-                    }}
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20"
-                  >
-                    Save & Sync
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+              );
+            })}
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
-
