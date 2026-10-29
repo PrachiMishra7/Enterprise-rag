@@ -41,6 +41,10 @@ class Document(Base):
     uploaded_by = Column(String, ForeignKey("users.id"))
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     chunks_count = Column(Integer, default=0)
+    storage_path = Column(String, nullable=True)
+    file_url = Column(String, nullable=True)
+    file_size = Column(Integer, default=0)
+    mime_type = Column(String, nullable=True)
 
     uploader = relationship("User", back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")

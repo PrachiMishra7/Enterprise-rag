@@ -229,12 +229,33 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
         text = self._extract_text(content, filename)
         chunks = self._split_into_chunks(text)
 
+        # Generate UUID upfront
+        doc_id = str(uuid.uuid4())
+
+        # Upload original raw binary file to Supabase Storage
+        storage_path, file_url = None, None
+        try:
+            from rag.storage import SupabaseStorageManager
+            storage_mgr = SupabaseStorageManager()
+            if storage_mgr.is_configured:
+                storage_path, file_url = storage_mgr.upload_file(content, filename, doc_id)
+        except Exception as e:
+            print(f"Notice: Supabase storage upload skipped or error: {e}")
+
+        import mimetypes
+        mtype, _ = mimetypes.guess_type(filename)
+
         db_doc = Document(
+            id=doc_id,
             filename=filename,
             department=department,
             access_level=access_level,
             uploaded_by=uploaded_by,
-            chunks_count=len(chunks)
+            chunks_count=len(chunks),
+            storage_path=storage_path,
+            file_url=file_url,
+            file_size=len(content),
+            mime_type=mtype or "application/octet-stream"
         )
         db.add(db_doc)
         db.commit()
@@ -295,9 +316,12 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
                 "department": doc.department,
                 "access_level": doc.access_level,
                 "uploaded_by": doc.uploaded_by,
-                "uploaded_at": doc.uploaded_at.isoformat(),
+                "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else "",
                 "chunk_count": doc.chunks_count,
-                "file_size": 0  # To maintain backwards compatibility if used
+                "file_size": doc.file_size or 0,
+                "file_url": doc.file_url,
+                "storage_path": doc.storage_path,
+                "mime_type": doc.mime_type
             }
             for doc in docs
         ]

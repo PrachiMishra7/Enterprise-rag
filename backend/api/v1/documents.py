@@ -150,3 +150,87 @@ async def delete_document(
     db.delete(doc)
     db.commit()
     return {"message": "Document deleted from RAG index", "document_id": doc_id}
+
+@router.get("/{doc_id}/content")
+async def get_document_content(
+    doc_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retrieve full reconstructed text and chunk segments of a document (with RBAC enforcement)."""
+    from models.database import Document, DocumentChunk
+    from rag.document_processor import ROLE_ACCESS_MAP
+
+    # Support looking up either by UUID doc_id or by filename
+    doc = db.query(Document).filter((Document.id == doc_id) | (Document.filename == doc_id)).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    user_role = current_user.get("role", "employee")
+    allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
+    if doc.access_level not in allowed_access and user_role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have clearance to view this document")
+
+    chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == doc.id).order_by(DocumentChunk.chunk_index).all()
+    full_text = "\n\n".join([c.text for c in chunks]) if chunks else ""
+
+    return {
+        "id": doc.id,
+        "filename": doc.filename,
+        "department": doc.department,
+        "access_level": doc.access_level,
+        "chunks_count": len(chunks),
+        "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else None,
+        "content": full_text,
+        "chunks": [{"index": c.chunk_index, "text": c.text} for c in chunks],
+        "file_url": doc.file_url,
+        "storage_path": doc.storage_path,
+        "file_size": doc.file_size or len(full_text.encode('utf-8')),
+        "mime_type": doc.mime_type or "text/plain"
+    }
+
+@router.get("/{doc_id}/download")
+async def download_document(
+    doc_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Download the actual original binary file from Supabase Storage, or fallback to reconstructed text."""
+    from fastapi.responses import Response
+    from models.database import Document, DocumentChunk
+    from rag.document_processor import ROLE_ACCESS_MAP
+    from rag.storage import SupabaseStorageManager
+    import mimetypes
+
+    doc = db.query(Document).filter((Document.id == doc_id) | (Document.filename == doc_id)).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    user_role = current_user.get("role", "employee")
+    allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
+    if doc.access_level not in allowed_access and user_role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have clearance to download this document")
+
+    # Attempt to retrieve real original binary file from Supabase Storage
+    if doc.storage_path:
+        storage_mgr = SupabaseStorageManager()
+        raw_bytes = storage_mgr.download_file(doc.storage_path)
+        if raw_bytes is not None:
+            mime = doc.mime_type or mimetypes.guess_type(doc.filename)[0] or "application/octet-stream"
+            return Response(
+                content=raw_bytes,
+                media_type=mime,
+                headers={"Content-Disposition": f'attachment; filename="{doc.filename}"'}
+            )
+
+    # Fallback: serve reconstructed text from chunks
+    chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == doc.id).order_by(DocumentChunk.chunk_index).all()
+    full_text = "\n\n".join([c.text for c in chunks]) if chunks else ""
+
+    filename = doc.filename if doc.filename.endswith((".txt", ".md", ".json")) else f"{doc.filename}.txt"
+    return Response(
+        content=full_text,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
