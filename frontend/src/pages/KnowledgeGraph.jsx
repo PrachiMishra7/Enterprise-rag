@@ -4,8 +4,27 @@ import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/api";
 import Loader from "../components/Loader";
 import {
-  Share2, ZoomIn, ZoomOut, Maximize2, Search, X, Network, Info
+  Share2, ZoomIn, ZoomOut, Maximize2, Search, X, Network, Info, AlertTriangle
 } from "lucide-react";
+
+// ── SVG gradient / marker defs ──────────────────────────────────────────────
+function GraphDefs() {
+  return (
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="hsl(var(--muted-foreground))" fillOpacity="0.4" />
+      </marker>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+      <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.03" />
+        <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+  );
+}
 
 // ── Restrained enterprise palette ──
 const TYPE_META = {
@@ -67,6 +86,7 @@ export default function KnowledgeGraphPage() {
   const { token } = useAuth();
   const [graphData, setGraphData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [hovered, setHovered] = useState(null);
   const [search, setSearch] = useState("");
@@ -81,8 +101,21 @@ export default function KnowledgeGraphPage() {
   const W=1000, H=620;
 
   useEffect(() => {
-    apiCall("GET","/kg/graph",null,false,token)
-      .then(d=>setGraphData(d)).catch(console.error).finally(()=>setLoading(false));
+    setLoading(true);
+    setError(null);
+    apiCall("GET", "/kg/graph", null, false, token)
+      .then(d => {
+        if (d && (d.nodes || d.edges)) {
+          setGraphData(d);
+        } else {
+          setGraphData({ nodes: [], edges: [], stats: {} });
+        }
+      })
+      .catch(err => {
+        console.error("KG fetch error:", err);
+        setError(err?.message || "Failed to load knowledge graph");
+      })
+      .finally(() => setLoading(false));
   }, [token]);
 
   const filteredNodes = useMemo(() =>
@@ -157,7 +190,26 @@ export default function KnowledgeGraphPage() {
     <Loader size="full" text="Building Knowledge Graph…" subtext="Mapping relationships across departments, documents, roles, and chunks" />
   );
 
-  const stats=graphData?.stats||{};
+  if (error) return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-background text-center p-8">
+      <div className="w-16 h-16 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+        <AlertTriangle className="w-8 h-8 text-destructive" />
+      </div>
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-1">Graph unavailable</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">{error}</p>
+      </div>
+      <button
+        onClick={() => { setLoading(true); setError(null); apiCall("GET","/kg/graph",null,false,token).then(d=>setGraphData(d)).catch(e=>setError(e?.message||"Error")).finally(()=>setLoading(false)); }}
+        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+      >
+        Retry
+      </button>
+    </div>
+  );
+
+  const hasNodes = filteredNodes.length > 0;
+  const stats = graphData?.stats || {};
 
   return (
     <div className="flex-1 flex flex-col bg-background overflow-hidden">
@@ -214,10 +266,10 @@ export default function KnowledgeGraphPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" style={{minHeight:0}}>
         {/* ── Canvas ───────────────────────────────────────────────── */}
         <div className="flex-1 relative overflow-hidden select-none bg-background"
-          style={{cursor:draggingNode.current?"grabbing":isPanning.current?"grabbing":"grab"}}
+          style={{cursor:draggingNode.current?"grabbing":isPanning.current?"grabbing":"grab", minHeight: "400px"}}
           onMouseDown={onSVGMouseDown} onMouseMove={onSVGMouseMove}
           onMouseUp={onSVGMouseUp} onMouseLeave={onSVGMouseUp} onWheel={onWheel}>
 
@@ -233,7 +285,18 @@ export default function KnowledgeGraphPage() {
               style={{background:"radial-gradient(circle, rgba(139,92,246,0.05), transparent 70%)"}}/>
           </div>
 
-          <svg ref={svgRef} width="100%" height="100%" style={{position:"absolute",inset:0}}>
+          {!hasNodes && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center z-10 pointer-events-none">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Network className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-1">No graph data yet</p>
+                <p className="text-xs text-muted-foreground max-w-xs">Upload documents and assign them to departments to start building the knowledge graph.</p>
+              </div>
+            </div>
+          )}
+          <svg ref={svgRef} width="100%" height="100%" style={{position:"absolute",inset:0,display:"block"}}>
             <GraphDefs/>
             <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
 
