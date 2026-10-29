@@ -103,7 +103,7 @@ class DataConnector(Base):
 
     id = Column(String, primary_key=True) # e.g. 'gdrive', 'slack', 'github', 'notion', 'confluence'
     name = Column(String, nullable=False)
-    desc = Column(String, nullable=False)
+    desc = Column("desc_text", String, nullable=True) # Matches Supabase desc_text column
     status = Column(String, default="disconnected") # 'connected', 'disconnected', 'configuring'
     last_sync = Column(String, default="Never")
     doc_count = Column(Integer, default=0)
