@@ -4,31 +4,31 @@ import remarkGfm from 'remark-gfm';
 const components = {
   // Headings
   h1: ({ children }) => (
-    <h1 className="text-xl font-bold text-white mt-6 mb-3 pb-2 border-b border-white/10">{children}</h1>
+    <h1 className="text-xl font-bold text-foreground mt-6 mb-3 pb-2 border-b border-border">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-lg font-bold text-white mt-5 mb-2.5 pb-1.5 border-b border-white/10">{children}</h2>
+    <h2 className="text-lg font-bold text-foreground mt-5 mb-2.5 pb-1.5 border-b border-border">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-base font-semibold text-slate-100 mt-4 mb-2">{children}</h3>
+    <h3 className="text-base font-semibold text-foreground mt-4 mb-2">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-sm font-semibold text-slate-200 mt-3 mb-1.5">{children}</h4>
+    <h4 className="text-sm font-semibold text-foreground/90 mt-3 mb-1.5">{children}</h4>
   ),
 
   // Paragraph
   p: ({ children }) => (
-    <p className="text-sm text-slate-300 leading-relaxed mb-3 last:mb-0">{children}</p>
+    <p className="text-sm text-foreground/90 leading-relaxed mb-3 last:mb-0">{children}</p>
   ),
 
   // Strong / Bold
   strong: ({ children }) => (
-    <strong className="font-semibold text-white">{children}</strong>
+    <strong className="font-semibold text-foreground">{children}</strong>
   ),
 
   // Emphasis / Italic
   em: ({ children }) => (
-    <em className="italic text-slate-200">{children}</em>
+    <em className="italic text-foreground/80">{children}</em>
   ),
 
   // Unordered list
@@ -43,9 +43,9 @@ const components = {
 
   // List item
   li: ({ children, ordered }) => (
-    <li className="flex items-start gap-2.5 text-sm text-slate-300 leading-relaxed">
+    <li className="flex items-start gap-2.5 text-sm text-foreground/90 leading-relaxed">
       {!ordered && (
-        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
       )}
       <span>{children}</span>
     </li>

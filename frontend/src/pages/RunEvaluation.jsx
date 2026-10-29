@@ -88,27 +88,27 @@ export default function RunEvaluation() {
 
   return (
     <div className="flex-1 flex flex-col bg-background text-foreground overflow-y-auto">
-      <div className="max-w-5xl mx-auto w-full p-6 md:p-10 flex flex-col gap-8">
+      <div className="max-w-5xl mx-auto w-full p-4 sm:p-6 md:p-8 flex flex-col gap-6 sm:gap-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                 <FlaskConical className="w-5 h-5 text-primary" />
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-foreground">System Evaluation</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">System Evaluation</h1>
             </div>
-            <p className="text-sm text-muted-foreground ml-12">
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium sm:ml-12">
               Automated benchmark — Baseline RAG vs Proposed Multi-Agent Framework
             </p>
           </div>
           {results && !loading && (
             <button
               onClick={runSuite}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card border border-border/80 text-xs sm:text-sm font-semibold text-foreground hover:border-primary/40 transition-all cursor-pointer shadow-xs"
             >
-              <RefreshCw className="w-4 h-4" /> Re-run
+              <RefreshCw className="w-4 h-4 text-primary" /> Re-run
             </button>
           )}
         </div>

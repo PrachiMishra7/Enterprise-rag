@@ -41,10 +41,10 @@ export default function Upload({ showToast, loadDocuments }) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 md:p-12 bg-background text-foreground">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 bg-background text-foreground">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">Upload Knowledge</h1>
-        <p className="text-muted-foreground text-base mb-10">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground mb-2">Upload Knowledge</h1>
+        <p className="text-muted-foreground text-xs sm:text-sm mb-6 sm:mb-8 font-medium">
           Add new documents to the Enterprise RAG system. The document will be chunked, embedded, and securely added to the vector store.
         </p>
 

@@ -2,22 +2,28 @@ import { useState, useEffect } from "react";
 import { Menu, Sun, Moon, Bell } from "lucide-react";
 
 export default function Header({ page, setSidebarOpen, setPage }) {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    setIsDark(root.classList.contains("dark"));
-  }, []);
+    if (isDark) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
 
   const toggleTheme = () => {
-    const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.remove("dark");
-      setIsDark(false);
-    } else {
-      root.classList.add("dark");
-      setIsDark(true);
-    }
+    setIsDark(!isDark);
   };
 
   const titles = {
@@ -57,8 +63,23 @@ export default function Header({ page, setSidebarOpen, setPage }) {
         >
           <Bell className="w-4 h-4" />
         </button>
-        <button onClick={toggleTheme} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Toggle Theme">
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        <button 
+          onClick={toggleTheme} 
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/70 bg-card hover:bg-secondary/80 text-foreground transition-all duration-200 cursor-pointer shadow-xs text-xs font-medium" 
+          aria-label="Toggle Theme"
+          title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}
+        >
+          {isDark ? (
+            <>
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline text-xs">Light</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline text-xs">Dark</span>
+            </>
+          )}
         </button>
       </div>
     </div>

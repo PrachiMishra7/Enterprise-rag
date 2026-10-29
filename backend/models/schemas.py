@@ -63,3 +63,22 @@ class PromptResponse(BaseModel):
     system_prompt: str
     updated_at: str
 
+
+class UserUpdateRole(BaseModel):
+    role: str
+    department: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    department: str
+    created_at: Optional[str] = None
+
+
+class DocumentAccessUpdate(BaseModel):
+    access_level: str
+    department: Optional[str] = None
+

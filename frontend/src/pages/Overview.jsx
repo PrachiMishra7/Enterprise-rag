@@ -212,9 +212,12 @@ export default function Overview({ navigateTo }) {
 
   const firstName = (user?.name || 'there').split(' ')[0];
 
+  const [statsLoading, setStatsLoading] = useState(false);
+
   useEffect(() => {
     const activeToken = token || localStorage.getItem('enterprise_token');
     if (!activeToken) return;
+    setStatsLoading(true);
     apiCall('GET', `/analytics?days=${timeRange}`, null, false, activeToken)
       .then(d => {
         const merged = { ...DEFAULT, ...d };
@@ -223,7 +226,8 @@ export default function Overview({ navigateTo }) {
           sessionStorage.setItem(`rag_analytics_cache_${timeRange}`, JSON.stringify(merged));
         } catch {}
       })
-      .catch(e => console.error('Analytics:', e));
+      .catch(e => console.error('Analytics:', e))
+      .finally(() => setStatsLoading(false));
   }, [token, timeRange]);
 
   const goSearch = () => { if (search.trim()) navigateTo('chat', search.trim()); };
@@ -240,32 +244,31 @@ export default function Overview({ navigateTo }) {
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-[20px] overflow-hidden p-8 border border-border group bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-[#0f172a] dark:to-[#1e1b4b]"
-          style={{ backgroundSize: '200% 200%' }}>
-          <motion.div animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                      transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-                      className="absolute inset-0 z-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-[#0f172a] dark:to-[#1e1b4b]" style={{ backgroundSize: '200% 200%' }} />
+          className="relative rounded-2xl overflow-hidden p-8 border border-border/80 shadow-sm bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent dark:from-blue-950/40 dark:via-indigo-950/20 dark:to-card">
           
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 relative z-10">
             <div className="flex-1 w-full max-w-2xl">
-              <h1 className="text-[28px] font-bold text-foreground mb-1">
-                Welcome back, <span className="text-cyan-600 dark:text-cyan-400">{firstName} 👋</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Enterprise AI Engine
+              </div>
+              <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">
+                Welcome back, {firstName} 👋
               </h1>
               <p className="text-muted-foreground text-sm mb-6">
-                Turn your enterprise knowledge into real business impact.
+                Instant semantic retrieval and grounded answers across your enterprise data.
               </p>
 
-              {/* Glassmorphism Search */}
-              <div className="flex items-center gap-3 rounded-full px-5 py-3 mb-4 backdrop-blur-md transition-all focus-within:ring-2 focus-within:ring-cyan-500/50 hover:bg-black/5 dark:hover:bg-white/5 border border-black/10 dark:border-white/10 bg-white/50 dark:bg-slate-800/50">
-                <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+              {/* Modern SaaS Search */}
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-4 transition-all focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary border border-border bg-card shadow-sm">
+                <Search className="w-4 h-4 text-primary flex-shrink-0" />
                 <input
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/80 outline-none"
-                  placeholder="Ask anything across your organization's knowledge..."
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                  placeholder="Ask anything across company policies, contracts, or tech docs..."
                   value={search} onChange={e => setSearch(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && goSearch()} />
                 <button onClick={goSearch}
-                  className="px-4 py-1.5 rounded-full text-xs font-bold text-white flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-purple-600">
-                  Enterprise <ChevronRight className="w-3 h-3 ml-1" />
+                  className="px-4 py-2 rounded-lg text-xs font-bold text-white flex items-center justify-center flex-shrink-0 transition-all hover:opacity-90 active:scale-95 shadow-sm bg-primary cursor-pointer">
+                  Search AI <ChevronRight className="w-3.5 h-3.5 ml-1" />
                 </button>
               </div>
 
@@ -273,7 +276,7 @@ export default function Overview({ navigateTo }) {
               <div className="flex flex-wrap gap-2">
                 {SUGGESTIONS.map(q => (
                   <button key={q} onClick={() => navigateTo('chat', q)}
-                    className="text-[10px] px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-muted-foreground hover:text-foreground hover:border-black/20 dark:hover:border-white/20 transition-all bg-black/5 dark:bg-white/5">
+                    className="text-xs px-3 py-1 rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all cursor-pointer bg-card/60">
                     {q}
                   </button>
                 ))}
@@ -309,7 +312,7 @@ export default function Overview({ navigateTo }) {
         </motion.div>
 
         {/* ── ROW 2 ────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 h-[320px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
           {/* RAG Health */}
           <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden flex flex-col h-full">
@@ -363,8 +366,8 @@ export default function Overview({ navigateTo }) {
             </div>
             
             <div className="flex gap-2 mb-4">
-              <button onClick={() => setChartTab('queries')} className={`text-[10px] px-3 py-1 rounded-full border ${chartTab==='queries'?'border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10':'border-border text-muted-foreground'}`}>User Queries</button>
-              <button onClick={() => setChartTab('docs')} className={`text-[10px] px-3 py-1 rounded-full border ${chartTab==='docs'?'border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10':'border-border text-muted-foreground'}`}>Documents Indexed</button>
+              <button onClick={() => setChartTab('queries')} className={`text-xs px-3 py-1 rounded-lg border transition-all cursor-pointer font-medium ${chartTab==='queries'?'border-primary text-primary bg-primary/10 shadow-xs':'border-border/70 text-muted-foreground hover:text-foreground'}`}>User Queries</button>
+              <button onClick={() => setChartTab('docs')} className={`text-xs px-3 py-1 rounded-lg border transition-all cursor-pointer font-medium ${chartTab==='docs'?'border-primary text-primary bg-primary/10 shadow-xs':'border-border/70 text-muted-foreground hover:text-foreground'}`}>Documents Indexed</button>
             </div>
 
             <div className="flex-1 min-h-0">
@@ -441,7 +444,7 @@ export default function Overview({ navigateTo }) {
         </div>
 
         {/* ── ROW 3 ────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[220px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           
           {/* Department Usage */}
           <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden flex flex-col h-full lg:col-span-1">
@@ -520,57 +523,57 @@ export default function Overview({ navigateTo }) {
         </div>
 
         {/* ── RAG PIPELINE ─────────────────────────────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden flex items-center gap-6">
-          <div className="w-32 shrink-0">
+        <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center gap-6">
+          <div className="w-full lg:w-36 shrink-0">
              <SectionLabel icon={GitMerge}>The RAG Pipeline</SectionLabel>
-             <p className="text-[9px] text-muted-foreground/80 mt-2 leading-relaxed">From your question to a grounded answer, in seconds.</p>
+             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-relaxed">From question to grounded answer.</p>
           </div>
 
-          <div className="flex-1 flex items-center justify-between">
-            {PIPELINE_STEPS.map((step, i) => {
-              const active = stats.query_count > 0;
-              const color = PALETTE.pipeline[i];
-              return (
-                <div key={step.label} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center w-full relative z-10">
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: i * 0.1 }}
-                      className="w-10 h-10 rounded-full flex items-center justify-center border-2 bg-card"
-                      style={{ borderColor: active ? color : 'var(--color-border)', boxShadow: active ? `0 0 15px ${color}30` : 'none' }}>
-                      <step.icon className="w-4 h-4" style={{ color: active ? color : 'var(--color-muted-foreground)' }} />
-                    </motion.div>
-                    <span className="text-[9px] font-bold text-center mt-2 leading-tight" style={{ color: active ? 'var(--color-foreground)' : 'var(--color-muted-foreground)' }}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {i < PIPELINE_STEPS.length - 1 && (
-                    <div className="flex-1 h-px relative -ml-4 -mr-4 z-0 overflow-hidden">
-                      <div className="absolute inset-0" style={{ background: active ? `linear-gradient(to right, ${color}, ${PALETTE.pipeline[i+1]})` : 'var(--color-border)' }} />
-                      
-                      {active && (
-                        <motion.div
-                          animate={{ x: ['-10%', '110%'] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear', delay: i * 0.4 }}
-                          className="absolute top-1/2 -translate-y-1/2 w-4 h-1 blur-[1px] rounded-full"
-                          style={{ background: '#fff', boxShadow: `0 0 10px ${color}` }}
-                        />
-                      )}
-                      
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t border-r rotate-45" style={{ borderColor: active ? PALETTE.pipeline[i+1] : 'var(--color-border)' }}></div>
+          <div className="w-full overflow-x-auto no-scrollbar py-2">
+            <div className="flex items-center justify-between min-w-[560px] gap-2">
+              {PIPELINE_STEPS.map((step, i) => {
+                const active = stats.query_count > 0;
+                const color = PALETTE.pipeline[i];
+                return (
+                  <div key={step.label} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center w-full relative z-10">
+                      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: i * 0.1 }}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 bg-card"
+                        style={{ borderColor: active ? color : 'var(--color-border)', boxShadow: active ? `0 0 15px ${color}30` : 'none' }}>
+                        <step.icon className="w-4 h-4" style={{ color: active ? color : 'var(--color-muted-foreground)' }} />
+                      </motion.div>
+                      <span className="text-[9px] font-bold text-center mt-2 leading-tight" style={{ color: active ? 'var(--color-foreground)' : 'var(--color-muted-foreground)' }}>
+                        {step.label}
+                      </span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    {i < PIPELINE_STEPS.length - 1 && (
+                      <div className="flex-1 h-px relative -ml-3 -mr-3 z-0 overflow-hidden">
+                        <div className="absolute inset-0" style={{ background: active ? `linear-gradient(to right, ${color}, ${PALETTE.pipeline[i+1]})` : 'var(--color-border)' }} />
+                        {active && (
+                          <motion.div
+                            animate={{ x: ['-10%', '110%'] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear', delay: i * 0.4 }}
+                            className="absolute top-1/2 -translate-y-1/2 w-4 h-1 blur-[1px] rounded-full"
+                            style={{ background: '#fff', boxShadow: `0 0 10px ${color}` }}
+                          />
+                        )}
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 border-t border-r rotate-45" style={{ borderColor: active ? PALETTE.pipeline[i+1] : 'var(--color-border)' }}></div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="shrink-0 pl-6 border-l border-border flex gap-6">
+          <div className="w-full lg:w-auto shrink-0 pt-4 lg:pt-0 lg:pl-6 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-between lg:justify-start gap-6">
             <div>
-              <p className="text-card-foreground font-bold text-lg">{stats.avg_retrieval_ms}ms</p>
-              <p className="text-[9px] text-muted-foreground/80">Avg. retrieval time</p>
+              <p className="text-foreground font-bold text-base sm:text-lg">{stats.avg_retrieval_ms}ms</p>
+              <p className="text-[9px] text-muted-foreground">Avg. retrieval</p>
             </div>
             <div>
-              <p className="text-cyan-600 dark:text-cyan-400 font-bold text-lg">{stats.rag_health}%</p>
-              <p className="text-[9px] text-muted-foreground/80">Answer grounded</p>
+              <p className="text-primary font-bold text-base sm:text-lg">{stats.rag_health}%</p>
+              <p className="text-[9px] text-muted-foreground">Grounded</p>
             </div>
           </div>
         </div>

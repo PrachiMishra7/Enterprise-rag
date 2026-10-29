@@ -94,3 +94,59 @@ async def summarize_document(
         return {"summary": summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
+
+@router.patch("/{doc_id}/access")
+async def update_document_access(
+    doc_id: str,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from models.database import Document, DocumentChunk
+    allowed_roles = ["admin", "hr_admin", "manager"]
+    if current_user.get("role") not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to change document access policies")
+
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    new_access = payload.get("access_level")
+    new_dept = payload.get("department")
+
+    if new_access:
+        doc.access_level = new_access
+        db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).update({"access_level": new_access})
+
+    if new_dept:
+        doc.department = new_dept
+        db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).update({"department": new_dept})
+
+    db.commit()
+    db.refresh(doc)
+    return {
+        "message": "Access policy updated successfully",
+        "document_id": doc.id,
+        "access_level": doc.access_level,
+        "department": doc.department
+    }
+
+@router.delete("/{doc_id}")
+async def delete_document(
+    doc_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from models.database import Document, DocumentChunk
+    allowed_roles = ["admin", "hr_admin"]
+    if current_user.get("role") not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Only admins can delete enterprise documents")
+
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    db.query(DocumentChunk).filter(DocumentChunk.document_id == doc_id).delete()
+    db.delete(doc)
+    db.commit()
+    return {"message": "Document deleted from RAG index", "document_id": doc_id}

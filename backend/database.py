@@ -12,10 +12,10 @@ engine = None
 
 if RAW_DATABASE_URL and not RAW_DATABASE_URL.startswith("sqlite"):
     try:
-        # Test connection with a timeout (Neon can take a few seconds to wake up)
+        # Test connection with a fast timeout (3s) to avoid blocking local runs
         test_engine = create_engine(
             RAW_DATABASE_URL,
-            connect_args={"connect_timeout": 30},
+            connect_args={"connect_timeout": 3},
             pool_size=5,
             max_overflow=10,
             pool_pre_ping=True

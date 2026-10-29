@@ -24,16 +24,16 @@ export default function AuditLogs() {
   }, [token]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-background text-foreground">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-background text-foreground">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
               <Shield className="w-5 h-5 text-primary" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-foreground">Audit & Security Logs</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Audit & Security Logs</h1>
           </div>
-          <p className="text-xs text-muted-foreground ml-12">Real-time track of all LLM queries, multi-agent routing, and hallucination events.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium sm:ml-12">Real-time track of all LLM queries, multi-agent routing, and hallucination events.</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
