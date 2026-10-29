@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { 
-  Settings, Key, Sliders, Shield, Save, Eye, EyeOff, 
-  Cpu, HardDrive, RefreshCw, CheckCircle2, Loader2, Database, AlertCircle 
+  Settings, Sliders, Shield, Save, 
+  Cpu, CheckCircle2, Loader2, AlertCircle 
 } from 'lucide-react';
 import { apiCall } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,7 +44,7 @@ export default function SystemSettings() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!isAdmin) {
-      alert('Only Superadmins can modify system configuration.');
+      alert('Only administrators can modify system settings.');
       return;
     }
     setSaving(true);
@@ -63,85 +62,85 @@ export default function SystemSettings() {
 
   return (
     <div className="flex-1 flex flex-col bg-background text-foreground overflow-y-auto">
-      <div className="max-w-4xl mx-auto w-full p-4 sm:p-8 space-y-6 flex-1 flex flex-col">
+      <div className="max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6 flex-1 flex flex-col">
         
-        {/* Header */}
-        <div className="flex justify-between items-center pb-6 border-b border-border">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
-                <Settings className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">System & Model Settings</h1>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">Global vector chunking, similarity thresholds, and LLM orchestration parameters stored in database.</p>
-          </div>
+        {/* Page Header */}
+        <div className="pb-5 border-b border-border">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            System & RAG Configuration
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Global vector chunking, cosine similarity thresholds, and multi-agent inference parameters.
+          </p>
         </div>
 
         {saved && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Settings saved successfully in Supabase PostgreSQL!</span>
+          <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Settings successfully persisted in enterprise database.</span>
           </div>
         )}
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
+          <div className="p-3.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-16 text-muted-foreground space-y-2">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm">Loading system settings...</p>
+          <div className="flex flex-col items-center justify-center p-16 text-muted-foreground space-y-2 bg-card border border-border rounded-xl">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <p className="text-xs">Loading configuration parameters...</p>
           </div>
         ) : (
           <form onSubmit={handleSave} className="space-y-6">
             
             {/* RAG & Chunking Parameters */}
-            <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-primary" /> RAG Chunking & Retrieval Parameters
-              </h3>
+            <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 pb-3 border-b border-border">
+                <Sliders className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Retrieval & Chunking Parameters
+                </h3>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Chunk Size (Characters)</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Chunk Size (Characters)</label>
                   <input 
                     type="number"
                     value={settings.chunk_size}
                     onChange={e => setSettings(prev => ({ ...prev, chunk_size: e.target.value }))}
-                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
                   />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">Maximum size of text chunks indexed per document.</span>
+                  <span className="text-[11px] text-muted-foreground block">Maximum size of partitioned text chunks per document.</span>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Chunk Overlap</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Chunk Overlap</label>
                   <input 
                     type="number"
                     value={settings.chunk_overlap}
                     onChange={e => setSettings(prev => ({ ...prev, chunk_overlap: e.target.value }))}
-                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
                   />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">Overlap between sequential chunks to preserve sentence boundaries.</span>
+                  <span className="text-[11px] text-muted-foreground block">Semantic character overlap between sequential chunks.</span>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Top-K Context Depth</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Top-K Context Depth</label>
                   <input 
                     type="number"
                     value={settings.top_k}
                     onChange={e => setSettings(prev => ({ ...prev, top_k: e.target.value }))}
-                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
                   />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">Number of relevant document chunks retrieved per user query.</span>
+                  <span className="text-[11px] text-muted-foreground block">Number of relevant chunks injected into prompt context.</span>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Min Similarity Threshold</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Min Similarity Threshold</label>
                   <input 
                     type="number"
                     step="0.05"
@@ -149,53 +148,57 @@ export default function SystemSettings() {
                     min="0"
                     value={settings.min_similarity}
                     onChange={e => setSettings(prev => ({ ...prev, min_similarity: e.target.value }))}
-                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
                   />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">Minimum cosine similarity required to inject context into the LLM.</span>
+                  <span className="text-[11px] text-muted-foreground block">Minimum cosine similarity required for vector inclusion.</span>
                 </div>
               </div>
             </div>
 
-            {/* Model & Security Orchestration */}
-            <div className="bg-card border border-border rounded-2xl p-5 sm:p-6 space-y-5 shadow-xs">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-primary" /> Orchestration & AI Models
-              </h3>
+            {/* Model & Orchestration */}
+            <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex items-center gap-2 pb-3 border-b border-border">
+                <Cpu className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Inference & Embedding Architecture
+                </h3>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Primary LLM Engine</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Default Inference Model</label>
                   <select 
                     value={settings.groq_model}
                     onChange={e => setSettings(prev => ({ ...prev, groq_model: e.target.value }))}
-                    className="w-full px-3 py-2 bg-card border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 text-foreground cursor-pointer"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground cursor-pointer"
                   >
                     <option value="llama-3.1-70b-versatile">Llama 3.1 70B Versatile (Recommended)</option>
-                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Ultra Fast)</option>
-                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Deep Reasoning)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Low Latency)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (MoE Architecture)</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-foreground block mb-1">Vector Embedding Architecture</label>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-foreground block">Embedding Vector Dimension</label>
                   <input 
                     disabled
                     value={settings.embedding_model}
-                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-medium text-muted-foreground cursor-not-allowed"
+                    className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-xs font-medium text-muted-foreground cursor-not-allowed"
                   />
-                  <span className="text-[10px] text-muted-foreground mt-1 block">SentenceTransformers 384-dimensional vector embedding space.</span>
+                  <span className="text-[11px] text-muted-foreground block">SentenceTransformers 384-dimensional dense embeddings.</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-1">
               <button
                 type="submit"
                 disabled={saving || !isAdmin}
-                className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
               >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                <Save className="w-4 h-4" /> Save System Settings
+                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <Save className="w-3.5 h-3.5" />
+                <span>Save System Settings</span>
               </button>
             </div>
 
