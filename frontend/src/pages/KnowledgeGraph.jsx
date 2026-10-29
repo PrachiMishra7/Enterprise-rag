@@ -7,12 +7,12 @@ import {
   Share2, ZoomIn, ZoomOut, Maximize2, Search, X, Network, Info
 } from "lucide-react";
 
-// ── Palette drawn from the app theme (cyan=primary, blue, purple, slate-amber) ──
+// ── Restrained enterprise palette ──
 const TYPE_META = {
-  department: { color: "#0ea5e9", glow: "#0ea5e940", label: "Department", size: 26 },
-  document:   { color: "#8b5cf6", glow: "#8b5cf640", label: "Document",   size: 18 },
-  role:       { color: "#06b6d4", glow: "#06b6d440", label: "Role",       size: 16 },
-  chunk:      { color: "#64748b", glow: "#64748b40", label: "Chunk",      size: 10 },
+  department: { color: "#2563EB", label: "Department", size: 24 },
+  document:   { color: "#475569", label: "Document",   size: 16 },
+  role:       { color: "#059669", label: "Role",       size: 15 },
+  chunk:      { color: "#94A3B8", label: "Chunk",      size: 9 },
 };
 
 // ── Force layout ──────────────────────────────────────────────────────────────
@@ -61,25 +61,6 @@ function useForceLayout(nodes, edges, W, H) {
     setPositions(computeLayout(nodes, edges, W, H));
   }, [nodes, edges, W, H]);
   return [positions, setPositions];
-}
-
-function GraphDefs() {
-  return (
-    <defs>
-      {Object.entries(TYPE_META).map(([type, meta]) => (
-        <filter key={type} id={"glow-"+type} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="6" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      ))}
-      {Object.entries(TYPE_META).map(([type, meta]) => (
-        <radialGradient key={"g-"+type} id={"grad-"+type} cx="35%" cy="35%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.4"/>
-          <stop offset="100%" stopColor={meta.color} stopOpacity="0.88"/>
-        </radialGradient>
-      ))}
-    </defs>
-  );
 }
 
 export default function KnowledgeGraphPage() {
@@ -314,15 +295,12 @@ export default function KnowledgeGraphPage() {
 
                     {/* main circle */}
                     <circle r={r}
-                      fill={`url(#grad-${node.type})`}
-                      stroke={meta.color}
-                      strokeWidth={isSelected?2.5:isHovered?2:1}
-                      strokeOpacity={isSelected?1:isHovered?0.9:0.5}
-                      filter={isSelected||isHovered?`url(#glow-${node.type})`:"none"}
+                      fill={meta.color}
+                      fillOpacity={isSelected ? 0.95 : 0.85}
+                      stroke="currentColor"
+                      className="text-border"
+                      strokeWidth={isSelected ? 2.5 : isHovered ? 2 : 1}
                       style={{transition:"all 0.18s"}}/>
-
-                    {/* shine dot */}
-                    <circle cx={-r*0.28} cy={-r*0.28} r={r*0.3} fill="white" fillOpacity="0.15"/>
 
                     {/* label */}
                     {(node.type!=="chunk"||isSelected||isHovered)&&(
