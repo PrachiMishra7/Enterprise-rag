@@ -28,7 +28,11 @@ CREATE TABLE IF NOT EXISTS documents (
     access_level VARCHAR DEFAULT 'employee',
     uploaded_by VARCHAR REFERENCES users(id) ON DELETE SET NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    chunks_count INTEGER DEFAULT 0
+    chunks_count INTEGER DEFAULT 0,
+    storage_path VARCHAR,
+    file_url VARCHAR,
+    file_size INTEGER DEFAULT 0,
+    mime_type VARCHAR
 );
 
 CREATE TABLE IF NOT EXISTS document_chunks (

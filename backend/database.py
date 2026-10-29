@@ -27,6 +27,22 @@ if RAW_DATABASE_URL and not RAW_DATABASE_URL.startswith("sqlite"):
                 conn.commit()
             except Exception as ve:
                 print(f"pgvector extension check: {ve}")
+
+            # Auto-migrate any newly added columns if table already exists in PostgreSQL
+            try:
+                migration_queries = [
+                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS storage_path VARCHAR;",
+                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_url VARCHAR;",
+                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_size INTEGER DEFAULT 0;",
+                    "ALTER TABLE documents ADD COLUMN IF NOT EXISTS mime_type VARCHAR;"
+                ]
+                for q in migration_queries:
+                    conn.execute(text(q))
+                conn.commit()
+                print("Documents table schema verified and updated.")
+            except Exception as me:
+                print(f"Schema auto-migration notice: {me}")
+
         engine = test_engine
         print("Successfully connected to PostgreSQL database.")
     except Exception as e:
