@@ -8,66 +8,89 @@
 
 @layer base {
   :root {
-    /* Premium SaaS Light Theme: Crisp, Clean Snow with Slate & Electric Blue */
-    --background: 210 20% 98%;
+    /* ── Professional Enterprise SaaS Light Palette ── */
+    /* Main Background: #F8FAFC (slate-50) */
+    --background: 210 40% 98%;
+    /* Primary Text: #0F172A (slate-900) */
     --foreground: 222 47% 11%;
 
+    /* Primary Surface: #FFFFFF */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
+    /* Popovers / Menus: #FFFFFF */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 53%; /* Modern SaaS Indigo-Blue (#2563EB) */
+    /* Primary Accent: #2563EB (Clean Royal Blue) */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 32% 93%;
+    /* Secondary Surface: #F1F5F9 (slate-100) */
+    --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 214 32% 93%;
+    /* Muted elements: #F1F5F9 */
+    --muted: 210 40% 96%;
+    /* Secondary Text: #64748B (slate-500) */
     --muted-foreground: 215 16% 47%;
 
+    /* Accent & Focus */
     --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    /* Destructive / Error: #DC2626 */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 28% 88%;
-    --input: 214 28% 88%;
+    /* Default Border: #E2E8F0 (slate-200) */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 221 83% 53%;
 
-    --radius: 0.75rem;
+    /* Restrained Component Geometry: 8px default controls, 12px cards */
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Premium SaaS Dark Theme: Deep Slate/Charcoal with Vibrant Blue & Crisp Contrast */
-    --background: 224 45% 6%; /* Deep Charcoal #0B0F19 */
-    --foreground: 210 40% 98%;
+    /* ── Professional Enterprise SaaS Dark Palette ── */
+    /* Main Background: #0B1220 (Deep Enterprise Navy/Slate) */
+    --background: 221 47% 8%;
+    /* Primary Text: #F1F5F9 (slate-100) */
+    --foreground: 210 40% 96%;
 
-    --card: 223 35% 10%; /* #111827 Panel */
-    --card-foreground: 210 40% 98%;
+    /* Primary Surface: #111827 (slate-900) */
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 223 35% 10%;
-    --popover-foreground: 210 40% 98%;
+    /* Popovers: #111827 */
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 217 91% 60%; /* Vibrant Royal Blue (#3B82F6) */
+    /* Primary Accent: #3B82F6 (Vibrant Slate Blue) */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 26% 16%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary Surface: #172033 (Subtle raised container) */
+    --secondary: 221 39% 15%;
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 220 26% 16%;
-    --muted-foreground: 217 19% 65%;
+    /* Muted: #172033 */
+    --muted: 221 39% 15%;
+    /* Secondary Text: #94A3B8 (slate-400) */
+    --muted-foreground: 215 20% 65%;
 
+    /* Accent */
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 50%;
+    /* Destructive: #F87171 */
+    --destructive: 0 91% 71%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 26% 18%;
-    --input: 220 26% 18%;
+    /* Default Border: #263244 */
+    --border: 217 28% 21%;
+    --input: 217 28% 21%;
     --ring: 217 91% 60%;
   }
 }
@@ -92,11 +115,11 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: 'Geist Variable', 'Inter', system-ui, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @layer base {
@@ -104,32 +127,33 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/20 selection:text-foreground;
+    @apply bg-background text-foreground selection:bg-primary/20 selection:text-foreground font-sans antialiased;
+    font-size: 14px;
+    letter-spacing: -0.011em;
   }
   html {
-    @apply font-sans antialiased;
     font-size: 14px;
   }
 }
 
 @layer utilities {
-  .card {
-    @apply bg-card border border-border rounded-xl shadow-sm;
+  .saas-card {
+    @apply bg-card border border-border rounded-xl shadow-xs;
   }
-  .card-hover {
-    @apply hover:border-primary/40 hover:shadow-md transition-all duration-200;
+  .saas-card-hover {
+    @apply hover:border-border/80 hover:shadow-sm transition-all duration-150;
   }
-  .glass-panel {
-    @apply bg-card border border-border rounded-xl shadow-sm;
+  .saas-header {
+    @apply bg-card/90 backdrop-blur-md border-b border-border;
   }
-  .glass-panel-hover {
-    @apply hover:border-primary/40 hover:shadow-md transition-all duration-200;
+  .saas-input {
+    @apply bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all;
   }
 }
 
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -148,4 +172,4 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
+}
