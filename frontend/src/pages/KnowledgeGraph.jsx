@@ -4,8 +4,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { apiCall } from "../utils/api";
 import Loader from "../components/Loader";
 import {
-  Share2, ZoomIn, ZoomOut, Maximize2, Search, X, Network, Info, AlertTriangle
+  Share2, ZoomIn, ZoomOut, Maximize2, Search, X, Network, Info, AlertTriangle, Eye
 } from "lucide-react";
+import DocumentPreviewModal from "../components/DocumentPreviewModal";
 
 // ── SVG gradient / marker defs ──────────────────────────────────────────────
 function GraphDefs() {
@@ -89,6 +90,7 @@ export default function KnowledgeGraphPage() {
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [hovered, setHovered] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [search, setSearch] = useState("");
   const [filterTypes, setFilterTypes] = useState({ department:true, document:true, role:true, chunk:true });
   const [zoom, setZoom] = useState(1);
@@ -503,11 +505,22 @@ export default function KnowledgeGraphPage() {
                       </div>
                     )}
 
-                    <button onClick={()=>zoomTo(selected)}
-                      className="w-full py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80 border"
-                      style={{background:col+"15",borderColor:col+"40",color:col}}>
-                      Center in View
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      {(selected.type === "document" || selected.type === "chunk") && (
+                        <button 
+                          onClick={() => setPreviewDoc({ filename: selected.type === "document" ? selected.label : (selected.label || selected.id) })}
+                          className="w-full py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground shadow-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> View Original Document
+                        </button>
+                      )}
+
+                      <button onClick={()=>zoomTo(selected)}
+                        className="w-full py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80 border"
+                        style={{background:col+"15",borderColor:col+"40",color:col}}>
+                        Center in View
+                      </button>
+                    </div>
                   </>);
                 })()}
               </motion.div>
@@ -588,6 +601,16 @@ export default function KnowledgeGraphPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Document Original Viewer Modal */}
+      <AnimatePresence>
+        {previewDoc && (
+          <DocumentPreviewModal 
+            docIdentifier={previewDoc} 
+            onClose={() => setPreviewDoc(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

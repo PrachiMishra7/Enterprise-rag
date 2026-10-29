@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Shield, HardDrive, Inbox, Search, Filter, 
   Layers, FolderOpen, AlertCircle, RefreshCw, Sparkles, 
-  X, Settings2, Trash2, Check, Loader2, LayoutGrid, List, FileCode, CheckCircle2
+  X, Settings2, Trash2, Check, Loader2, LayoutGrid, List, FileCode, CheckCircle2,
+  Eye, Download
 } from 'lucide-react';
+import DocumentPreviewModal from '../components/DocumentPreviewModal';
 
 export default function Documents({ documents = [], loadDocuments }) {
   const { user, token } = useAuth();
@@ -17,6 +19,9 @@ export default function Documents({ documents = [], loadDocuments }) {
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedAccess, setSelectedAccess] = useState('All');
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
+
+  // Document preview state
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   // Summarization states
   const [summarizingDoc, setSummarizingDoc] = useState(null);
@@ -313,11 +318,19 @@ export default function Documents({ documents = [], loadDocuments }) {
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <button
+                            onClick={() => setPreviewDoc(d)}
+                            className="px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-xs font-medium transition-colors flex items-center gap-1 border border-border"
+                            title="View original document content"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-primary" />
+                            <span>View Original</span>
+                          </button>
+                          <button
                             onClick={() => handleSummarize(d)}
                             className="px-2.5 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-foreground text-xs font-medium transition-colors flex items-center gap-1 border border-border"
                             title="Generate AI summary"
                           >
-                            <Sparkles className="w-3 h-3 text-primary" />
+                            <Sparkles className="w-3 h-3 text-amber-500" />
                             <span>Summarize</span>
                           </button>
                           {isAdmin && (
@@ -398,12 +411,22 @@ export default function Documents({ documents = [], loadDocuments }) {
                   <span className="text-[10px] text-muted-foreground uppercase font-medium">
                     {d.access_level?.replace('_', ' ')}
                   </span>
-                  <button 
-                    onClick={() => handleSummarize(d)}
-                    className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3" /> Summarize
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setPreviewDoc(d)}
+                      className="text-[11px] font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-1"
+                      title="View original document"
+                    >
+                      <Eye className="w-3 h-3 text-primary" /> View
+                    </button>
+                    <button 
+                      onClick={() => handleSummarize(d)}
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-amber-500 transition-colors flex items-center gap-1"
+                      title="AI Summary"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-500" /> Summary
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -569,6 +592,16 @@ export default function Documents({ documents = [], loadDocuments }) {
                 </form>
               </motion.div>
             </div>
+          )}
+        </AnimatePresence>
+
+        {/* Document Original Viewer Modal */}
+        <AnimatePresence>
+          {previewDoc && (
+            <DocumentPreviewModal 
+              docIdentifier={previewDoc} 
+              onClose={() => setPreviewDoc(null)} 
+            />
           )}
         </AnimatePresence>
 

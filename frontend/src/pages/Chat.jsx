@@ -6,10 +6,11 @@ import {
   Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, 
   Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, 
   X, ThumbsUp, ThumbsDown, History, MessageSquare, Clock, Plus, 
-  Trash2, ChevronRight, ArrowRight
+  Trash2, ChevronRight, ArrowRight, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import DocumentPreviewModal from '../components/DocumentPreviewModal';
 
 const AGENTS = [
   { 
@@ -55,6 +56,7 @@ export default function Chat({ queryInput, setQueryInput }) {
   const [showHistory, setShowHistory] = useState(false);
   const [historyItems, setHistoryItems] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -272,14 +274,29 @@ export default function Chat({ queryInput, setQueryInput }) {
 
                   {m.role === 'ai' && m.citations && m.citations.length > 0 && (
                     <div className="mt-3 flex flex-col gap-2 w-full">
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1.5">
-                        <FileText className="w-3 h-3 text-primary" /> Sources & Citations:
+                      <div className="text-[10px] font-bold uppercase text-muted-foreground flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="w-3 h-3 text-primary" /> Sources & Citations:
+                        </span>
+                        <span className="text-[10px] font-normal text-muted-foreground/80 lowercase italic">
+                          Click to view original doc
+                        </span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {m.citations.map((c, ci) => (
-                          <div key={ci} className="bg-card border border-border p-2.5 rounded-xl text-xs flex flex-col justify-between shadow-xs">
+                          <div 
+                            key={ci} 
+                            onClick={() => setPreviewDoc({ filename: c.source })}
+                            className="bg-card border border-border hover:border-primary/50 p-2.5 rounded-xl text-xs flex flex-col justify-between shadow-xs cursor-pointer transition-all hover:bg-secondary/40 group"
+                            title={`Click to view full original ${c.source}`}
+                          >
                             <p className="text-foreground/90 italic line-clamp-2 leading-relaxed">"{c.text}"</p>
-                            <span className="text-[9px] font-bold text-primary truncate mt-1.5">{c.source}</span>
+                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-border/50">
+                              <span className="text-[10px] font-semibold text-primary truncate">{c.source}</span>
+                              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground group-hover:text-primary transition-colors font-medium">
+                                <Eye className="w-3 h-3" /> View Doc
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -538,6 +555,16 @@ export default function Chat({ queryInput, setQueryInput }) {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Document Original Viewer Modal */}
+      <AnimatePresence>
+        {previewDoc && (
+          <DocumentPreviewModal 
+            docIdentifier={previewDoc} 
+            onClose={() => setPreviewDoc(null)} 
+          />
         )}
       </AnimatePresence>
 
