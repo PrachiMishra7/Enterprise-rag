@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiCall } from '../utils/api';
 import WebGLShaderBackground from '../components/WebGLShaderBackground';
+import logoImg from '../assets/logo.png';
 import { 
   AlertCircle, 
   ArrowRight, 
@@ -113,7 +114,7 @@ export default function Login() {
                 className="absolute inset-2 rounded-2xl bg-[#10B981]/20 blur-xl pointer-events-none" 
               />
               <img
-                src="/logo.jpg"
+                src={logoImg}
                 alt="VeriRAG Logo"
                 className="w-full h-full object-contain relative z-10 filter drop-shadow-[0_4px_18px_rgba(16,185,129,0.4)]"
               />

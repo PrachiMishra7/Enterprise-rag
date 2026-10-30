@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import logoImg from '../assets/logo.png';
 import { 
   LayoutDashboard, MessageSquare, Folder, Upload, LogOut, 
   TerminalSquare, Plug, Users, ShieldAlert, Settings, Zap, 
@@ -57,7 +58,7 @@ export default function Sidebar({ currentPage, setPage, sidebarOpen }) {
       {/* Brand Header */}
       <div className="px-4 h-14 flex items-center gap-3 border-b border-border shrink-0">
         <img
-          src="/logo.jpg"
+          src={logoImg}
           alt="VeriRAG logo"
           className="w-8 h-8 rounded-lg object-contain shrink-0 shadow-xs bg-card p-0.5 border border-border"
         />

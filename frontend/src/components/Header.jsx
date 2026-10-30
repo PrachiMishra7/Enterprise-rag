@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, Sun, Moon, Bell, Shield, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import logoImg from "../assets/logo.png";
 
 export default function Header({ page, setSidebarOpen, setPage }) {
   const { user } = useAuth();
@@ -57,7 +58,7 @@ export default function Header({ page, setSidebarOpen, setPage }) {
           <Menu className="w-5 h-5" />
         </button>
         <img 
-          src="/logo.jpg" 
+          src={logoImg} 
           alt="VeriRAG logo" 
           className="w-7 h-7 rounded-lg object-contain md:hidden shrink-0 border border-border" 
         />
