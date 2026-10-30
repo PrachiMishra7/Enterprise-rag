@@ -344,9 +344,17 @@ Employees must report suspected NDA breaches to the Legal team within 24 hours.
         )
         return text_splitter.split_text(text)
 
-    def list_documents(self, db: Session, role: str) -> List[dict]:
+    def list_documents(self, db: Session, role: str, department: str = None) -> List[dict]:
         allowed_access = ROLE_ACCESS_MAP.get(role, ["employee"])
-        docs = db.query(Document).filter(Document.access_level.in_(allowed_access)).all()
+        query = db.query(Document).filter(Document.access_level.in_(allowed_access))
+        
+        # Enforce departmental isolation: non-admins only see documents matching their department or 'general'
+        if role != "admin" and department and department.lower() != "general":
+            query = query.filter(Document.department.in_([department.lower(), "general"]))
+        elif role == "employee":
+            query = query.filter(Document.department.in_([department.lower() if department else "general", "general"]))
+            
+        docs = query.all()
         
         return [
             {

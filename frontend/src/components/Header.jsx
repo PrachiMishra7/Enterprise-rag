@@ -47,7 +47,7 @@ export default function Header({ page, setSidebarOpen, setPage }) {
   const h = titles[page] || titles.overview;
 
   return (
-    <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-card sticky top-0 shrink-0 z-30">
+    <header className="flex items-center justify-between px-6 h-14 border-b border-border bg-card/85 backdrop-blur-md sticky top-0 shrink-0 z-30 circuit-border transition-colors">
       <div className="flex items-center gap-3">
         <button 
           className="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer" 
@@ -58,8 +58,8 @@ export default function Header({ page, setSidebarOpen, setPage }) {
         </button>
         <img 
           src="/logo.jpg" 
-          alt="EnterpriseRAG logo" 
-          className="w-7 h-7 rounded-lg object-cover md:hidden shrink-0" 
+          alt="VeriRAG logo" 
+          className="w-7 h-7 rounded-lg object-contain md:hidden shrink-0 border border-border" 
         />
         <div>
           <div className="text-sm font-semibold text-foreground tracking-tight">{h.title}</div>
@@ -68,20 +68,25 @@ export default function Header({ page, setSidebarOpen, setPage }) {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* System Status Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-[11px] font-medium text-muted-foreground border border-border">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span>System Healthy</span>
+        {/* System Status Pill with Animated Emerald Ring */}
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-secondary/80 text-[11px] font-medium text-foreground border border-border">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]"></span>
+          </span>
+          <span className="font-semibold text-xs text-primary">System Optimal</span>
         </div>
 
-        {/* Audit link / Notifications */}
-        <button 
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
-          onClick={() => setPage?.('audit')}
-          title="Security & Audit Logs"
-        >
-          <Bell className="w-4 h-4" />
-        </button>
+        {/* Audit link / Notifications (Admin / Audited roles only) */}
+        {user?.role && ['admin', 'hr_admin', 'legal_admin', 'finance_admin'].includes(user.role) && (
+          <button 
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            onClick={() => setPage?.('audit')}
+            title="Security & Audit Logs"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+        )}
 
         {/* Theme Switcher Button */}
         <button 

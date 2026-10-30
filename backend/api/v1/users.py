@@ -36,6 +36,39 @@ async def list_users(
         for u in users
     ]
 
+@router.get("/export")
+async def export_users(
+    format: str = "csv",
+    admin: dict = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    import io, csv
+    from datetime import datetime
+    from fastapi.responses import Response
+
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["User ID", "Full Name", "Email Address", "Role", "Department", "Created At"])
+        for u in users:
+            writer.writerow([
+                u.id,
+                u.name,
+                u.email,
+                u.role,
+                u.department,
+                u.created_at.isoformat() if u.created_at else ""
+            ])
+        csv_content = output.getvalue()
+        filename = f"VeriRAG_User_Directory_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    return {"users": [{"id": u.id, "name": u.name, "email": u.email, "role": u.role, "department": u.department} for u in users]}
+
 @router.post("", response_model=UserResponse)
 async def create_user(
     user_in: UserCreate,

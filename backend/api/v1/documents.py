@@ -44,8 +44,42 @@ async def upload_document(
 
 @router.get("/list")
 async def list_documents(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    docs = doc_processor.list_documents(db, current_user["role"])
+    docs = doc_processor.list_documents(db, current_user["role"], current_user.get("department"))
     return {"documents": docs}
+
+@router.get("/export")
+async def export_documents(
+    format: str = "csv",
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    import io, csv
+    from datetime import datetime
+    from fastapi.responses import Response
+
+    docs = doc_processor.list_documents(db, current_user["role"], current_user.get("department"))
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Document ID", "Filename", "Department", "Access Level", "Chunk Count", "File Size (Bytes)", "Uploaded Date"])
+        for d in docs:
+            writer.writerow([
+                d["id"],
+                d["filename"],
+                d["department"].upper(),
+                d["access_level"].upper(),
+                d["chunk_count"],
+                d["file_size"],
+                d["uploaded_at"]
+            ])
+        csv_content = output.getvalue()
+        filename = f"VeriRAG_Document_Catalog_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    return {"documents": docs, "total": len(docs)}
 
 @router.post("/{doc_id}/summarize")
 async def summarize_document(

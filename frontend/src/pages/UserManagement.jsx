@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, Search, Plus, Edit2, 
-  Trash2, X, Shield, KeyRound, Loader2, CheckCircle2, AlertTriangle 
+  Trash2, X, Shield, KeyRound, Loader2, CheckCircle2, AlertTriangle, FileSpreadsheet 
 } from 'lucide-react';
-import { apiCall } from '../utils/api';
+import { apiCall, API_BASE } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function UserManagement() {
@@ -42,6 +42,34 @@ export default function UserManagement() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const [exportingUsers, setExportingUsers] = useState(false);
+
+  const handleExportUsers = async () => {
+    try {
+      setExportingUsers(true);
+      const downloadUrl = `${API_BASE}/users/export?format=csv`;
+      const token = localStorage.getItem('enterprise_token');
+      const res = await fetch(downloadUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error("User directory export failed");
+      const blob = await res.blob();
+      const filename = `VeriRAG_User_Directory_${new Date().toISOString().slice(0,10)}.csv`;
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert("Failed to export user directory: " + err.message);
+    } finally {
+      setExportingUsers(false);
+    }
+  };
 
   const triggerSuccess = (msg) => {
     setSuccessMsg(msg);
@@ -145,9 +173,18 @@ export default function UserManagement() {
                 className="w-full pl-9 pr-3.5 py-2 bg-card border border-border rounded-lg text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
               />
             </div>
+            <button
+              onClick={handleExportUsers}
+              disabled={exportingUsers}
+              className="px-3.5 py-2 bg-card border border-border hover:bg-secondary text-foreground text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+              title="Download full enterprise user directory report as CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
+              <span>{exportingUsers ? 'Exporting...' : 'Export Directory (CSV)'}</span>
+            </button>
             <button 
               onClick={() => { setErrorMsg(''); setShowAddUser(true); }}
-              className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add User</span>

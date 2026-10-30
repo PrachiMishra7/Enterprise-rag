@@ -18,11 +18,12 @@ hallucination_detector = HallucinationDetector()
 
 @router.post("", response_model=QueryResponse)
 async def query(request: QueryRequest, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Retrieve relevant chunks (role-filtered)
+    # Retrieve relevant chunks (role- and department-filtered)
     retrieved_chunks = retriever.retrieve(
         db=db,
         query=request.query,
         user_role=current_user["role"],
+        user_department=current_user.get("department"),
         top_k=5
     )
 

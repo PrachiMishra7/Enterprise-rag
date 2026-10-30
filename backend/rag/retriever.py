@@ -115,15 +115,22 @@ class HybridRetriever:
         except Exception as e:
             print(f"Vectorstore insert error: {e}")
 
-    def retrieve(self, db, query: str, user_role: str, top_k: int = 5) -> List[dict]:
+    def retrieve(self, db, query: str, user_role: str, user_department: str = None, top_k: int = 5) -> List[dict]:
         if not hasattr(self, '_cache'):
             self._cache = {}
             
-        cache_key = f"{query}_{user_role}_{top_k}"
+        dept_str = (user_department or 'general').lower()
+        cache_key = f"{query}_{user_role}_{dept_str}_{top_k}"
         if cache_key in self._cache:
             return self._cache[cache_key]
 
         allowed_access = ROLE_ACCESS_MAP.get(user_role, ["employee"])
+        
+        # Allowed departments for this query: admin sees all; others see their department + 'general'
+        if user_role == "admin":
+            allowed_depts = None
+        else:
+            allowed_depts = [dept_str, "general"]
         
         boosted_chunks = self.kg.get_boosted_chunks(query, db)
 
@@ -132,7 +139,10 @@ class HybridRetriever:
                 results = self.vectorstore.max_marginal_relevance_search(query, k=top_k * 3, fetch_k=top_k * 6)
                 filtered_results = []
                 for doc in results:
+                    doc_dept = (doc.metadata.get("department") or "general").lower()
                     if doc.metadata.get("access_level") in allowed_access:
+                        if allowed_depts is not None and doc_dept not in allowed_depts:
+                            continue
                         chunk_id = doc.metadata.get("id")
                         base_score = 0.0
                         if chunk_id in boosted_chunks:
@@ -167,7 +177,10 @@ class HybridRetriever:
         scored_chunks = []
 
         for c in chunks:
+            c_dept = (c.get("department") or "general").lower()
             if c.get("access_level") in allowed_access:
+                if allowed_depts is not None and c_dept not in allowed_depts:
+                    continue
                 text_lower = c["text"].lower()
                 matches = sum(1 for w in query_words if w in text_lower)
                 if c["id"] in boosted_chunks:

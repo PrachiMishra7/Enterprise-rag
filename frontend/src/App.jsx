@@ -16,7 +16,8 @@ import Settings from './pages/Settings';
 import AITools from './pages/AITools';
 import RunEvaluation from './pages/RunEvaluation';
 import KnowledgeGraph from './pages/KnowledgeGraph';
-
+import { hasPageAccess } from './utils/permissions';
+import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 function App() {
   const { user, token } = useAuth();
@@ -43,29 +44,43 @@ function App() {
     }
   }, [token]);
 
+  // If user role changes (e.g. switch account), ensure current page is accessible
+  useEffect(() => {
+    if (user && !hasPageAccess(user.role, page)) {
+      setPage('overview');
+    }
+  }, [user, page]);
+
   if (!user) {
-    return <Login onLoginSuccess={(data) => {
-      // In AuthContext this will set user and token
-    }} />;
+    return <Login onLoginSuccess={() => {}} />;
   }
 
-  const renderPlaceholder = (title, desc) => (
-    <div className="flex-1 flex flex-col items-center justify-center bg-[#0a0f1d] p-8 text-center h-full">
-      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-6 border border-primary/20">
-        <div className="w-10 h-10 bg-primary/20 rounded-xl animate-pulse"></div>
+  // Fallback for unauthorized direct route attempts
+  const renderAccessDenied = () => (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center h-full bg-background">
+      <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mb-5 border border-destructive/20">
+        <ShieldAlert className="w-8 h-8" />
       </div>
-      <h2 className="text-3xl font-extrabold text-white mb-2">{title}</h2>
-      <p className="text-slate-400 max-w-md">{desc}</p>
+      <h2 className="text-2xl font-bold text-foreground mb-2">Access Restricted by RBAC Policy</h2>
+      <p className="text-muted-foreground text-sm max-w-md mb-6">
+        Your role (<span className="font-semibold text-foreground uppercase">{user.role?.replace("_", " ")}</span>) does not have authorization to view this administrative module.
+      </p>
       <button 
         onClick={() => setPage('overview')}
-        className="mt-8 px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-lg border border-white/10 transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-lg transition-colors cursor-pointer"
       >
+        <ArrowLeft className="w-4 h-4" />
         Return to Dashboard
       </button>
     </div>
   );
 
   const renderContent = () => {
+    // RBAC Gateway Guard
+    if (!hasPageAccess(user.role, page)) {
+      return renderAccessDenied();
+    }
+
     switch (page) {
       case 'overview': return <Overview navigateTo={(p, q) => { setPage(p); if(q) setQueryInput(q); }} />;
       case 'chat': return <Chat queryInput={queryInput} setQueryInput={setQueryInput} />;
@@ -87,11 +102,10 @@ function App() {
   return (
     <div className={`flex h-screen overflow-hidden bg-background text-foreground ${sidebarOpen ? 'sidebar-open' : ''}`}>
 
-
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setSidebarOpen(false)}
-      ></div>
+      />
       
       <Sidebar currentPage={page} setPage={(p) => { setPage(p); setSidebarOpen(false); }} sidebarOpen={sidebarOpen} />
       

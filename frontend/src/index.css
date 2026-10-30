@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@600;700;800&family=MedievalSharp&family=Outfit:wght@500;600;700;800&display=swap');
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
@@ -8,90 +8,73 @@
 
 @layer base {
   :root {
-    /* ── Professional Enterprise SaaS Light Palette ── */
-    /* Main Background: #F8FAFC (slate-50) */
-    --background: 210 40% 98%;
-    /* Primary Text: #0F172A (slate-900) */
+    /* ── VeriRAG Theme: Modern White & Slate with Radiant Mint/Emerald ── */
+    /* Main Background: Crisp clean soft slate/white */
+    --background: 210 20% 98%;
+    /* Primary Text: Deep Navy Slate #1E293B */
     --foreground: 222 47% 11%;
 
     /* Primary Surface: #FFFFFF */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    /* Popovers / Menus: #FFFFFF */
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary Accent: #2563EB (Clean Royal Blue) */
-    --primary: 221 83% 53%;
+    /* VeriRAG Mint/Emerald Accent: #10B981 / hsl(160, 84%, 39%) */
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary Surface: #F1F5F9 (slate-100) */
-    --secondary: 210 40% 96%;
+    /* Secondary Surface */
+    --secondary: 160 20% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted elements: #F1F5F9 */
-    --muted: 210 40% 96%;
-    /* Secondary Text: #64748B (slate-500) */
+    --muted: 210 20% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* Accent & Focus */
-    --accent: 221 83% 53%;
+    --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive / Error: #DC2626 */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Default Border: #E2E8F0 (slate-200) */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 214 25% 91%;
+    --input: 214 25% 91%;
+    --ring: 160 84% 39%;
 
-    /* Restrained Component Geometry: 8px default controls, 12px cards */
-    --radius: 0.5rem;
+    --radius: 0.625rem;
   }
 
   .dark {
-    /* ── Professional Enterprise SaaS Dark Palette ── */
-    /* Main Background: #0B1220 (Deep Enterprise Navy/Slate) */
-    --background: 221 47% 8%;
-    /* Primary Text: #F1F5F9 (slate-100) */
+    /* ── VeriRAG Dark Palette: Deep Obsidian with Glowing Circuit Mint ── */
+    --background: 222 47% 7%;
     --foreground: 210 40% 96%;
 
-    /* Primary Surface: #111827 (slate-900) */
-    --card: 222 47% 11%;
+    --card: 223 45% 10%;
     --card-foreground: 210 40% 96%;
 
-    /* Popovers: #111827 */
-    --popover: 222 47% 11%;
+    --popover: 223 45% 10%;
     --popover-foreground: 210 40% 96%;
 
-    /* Primary Accent: #3B82F6 (Vibrant Slate Blue) */
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    /* Glowing Mint Green: #10B981 / #34D399 */
+    --primary: 160 84% 45%;
+    --primary-foreground: 222 47% 7%;
 
-    /* Secondary Surface: #172033 (Subtle raised container) */
-    --secondary: 221 39% 15%;
+    --secondary: 221 35% 14%;
     --secondary-foreground: 210 40% 96%;
 
-    /* Muted: #172033 */
-    --muted: 221 39% 15%;
-    /* Secondary Text: #94A3B8 (slate-400) */
+    --muted: 221 35% 14%;
     --muted-foreground: 215 20% 65%;
 
-    /* Accent */
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 160 84% 45%;
+    --accent-foreground: 222 47% 7%;
 
-    /* Destructive: #F87171 */
     --destructive: 0 91% 71%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Default Border: #263244 */
-    --border: 217 28% 21%;
-    --input: 217 28% 21%;
-    --ring: 217 91% 60%;
+    --border: 221 28% 18%;
+    --input: 221 28% 18%;
+    --ring: 160 84% 45%;
   }
 }
 
@@ -141,13 +124,37 @@
     @apply bg-card border border-border rounded-xl shadow-xs;
   }
   .saas-card-hover {
-    @apply hover:border-border/80 hover:shadow-sm transition-all duration-150;
+    @apply hover:border-primary/40 hover:shadow-md transition-all duration-200;
   }
   .saas-header {
     @apply bg-card/90 backdrop-blur-md border-b border-border;
   }
   .saas-input {
     @apply bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all;
+  }
+  
+  /* VeriRAG Emerald Glassmorphism & Cyber Glow utilities */
+  .verirag-glass {
+    @apply bg-card/80 backdrop-blur-xl border border-border hover:border-primary/40 transition-all duration-300;
+  }
+  .verirag-glow {
+    box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+  }
+  .verirag-glow-hover:hover {
+    box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.35);
+  }
+  .circuit-border {
+    position: relative;
+  }
+  .circuit-border::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
+    pointer-events: none;
   }
 }
 

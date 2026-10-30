@@ -1,6 +1,9 @@
+import io
+import csv
 import time
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 
@@ -11,7 +14,7 @@ from models.database import QueryLog, Document, User
 router = APIRouter()
 
 # ── In-Memory Cache (TTL: 5 seconds) ──────────────────────────────────────────
-_ANALYTICS_CACHE = {}  # Cache keyed by days
+_ANALYTICS_CACHE = {}  # Cache keyed by params
 CACHE_TTL_SECONDS = 5.0
 
 
@@ -22,16 +25,34 @@ def _pct_change(curr, prev):
 
 
 @router.get("")
-def get_analytics(days: int = 7, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_analytics(
+    days: int = 7,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     days = max(1, min(days, 365))
     now = time.time()
+    cache_key = f"{days}_{start_date}_{end_date}"
     
-    if days in _ANALYTICS_CACHE and (now - _ANALYTICS_CACHE[days]["timestamp"] < CACHE_TTL_SECONDS):
-        return _ANALYTICS_CACHE[days]["data"]
+    if cache_key in _ANALYTICS_CACHE and (now - _ANALYTICS_CACHE[cache_key]["timestamp"] < CACHE_TTL_SECONDS):
+        return _ANALYTICS_CACHE[cache_key]["data"]
 
     today = datetime.utcnow().date()
-    curr_start_date = today - timedelta(days=days)
-    prev_start_date = today - timedelta(days=days * 2)
+    if start_date and end_date:
+        try:
+            curr_start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            curr_end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            delta_days = max(1, (curr_end_date - curr_start_date).days)
+            prev_start_date = curr_start_date - timedelta(days=delta_days)
+        except Exception:
+            curr_start_date = today - timedelta(days=days)
+            prev_start_date = today - timedelta(days=days * 2)
+    else:
+        curr_start_date = today - timedelta(days=days)
+        prev_start_date = today - timedelta(days=days * 2)
+
     curr_start = str(curr_start_date)
     prev_start = str(prev_start_date)
     prev_end   = curr_start
@@ -78,6 +99,14 @@ def get_analytics(days: int = 7, current_user: dict = Depends(get_current_user),
         QueryLog.agent,
         QueryLog.user_feedback
     ).filter(func.date(QueryLog.created_at) >= prev_start).all()
+
+    # Query true document uploads per date from DB
+    docs_range = db.query(
+        func.date(Document.uploaded_at).label("upload_date"),
+        func.count(Document.id).label("count")
+    ).filter(func.date(Document.uploaded_at) >= prev_start).group_by(func.date(Document.uploaded_at)).all()
+
+    daily_docs = {str(d.upload_date): int(d.count) for d in docs_range if d.upload_date}
 
     curr_q = 0
     prev_q = 0
@@ -167,20 +196,12 @@ def get_analytics(days: int = 7, current_user: dict = Depends(get_current_user),
         ds  = str(day)
         q = daily_queries.get(ds, 0)
         t = daily_tokens.get(ds, 0)
-        
-        # Provide realistic historical baseline if database is recently created
-        if q == 0:
-            weekday = day.weekday()
-            is_weekend = weekday >= 5
-            pseudo_q = 0 if is_weekend else ((i * 13 + weekday * 5) % 12 + 4)
-            pseudo_t = pseudo_q * 510
-            q = pseudo_q
-            t = pseudo_t
+        d_count = daily_docs.get(ds, 0)
 
         label = day.strftime("%a") if days <= 7 else (day.strftime("%b %d") if days <= 90 else day.strftime("%b %Y"))
-        volume_history.append({"name": label, "date": ds, "queries": q, "docs": max(1, q // 4), "tokens": t})
+        volume_history.append({"name": label, "date": ds, "queries": q, "docs": d_count, "tokens": t})
         sparklines["queries"].append(q)
-        sparklines["docs"].append(max(1, q // 4))
+        sparklines["docs"].append(d_count)
         sparklines["tokens"].append(t)
 
     # ── Department usage ──────────────────────────────────────────────────────
@@ -259,8 +280,127 @@ def get_analytics(days: int = 7, current_user: dict = Depends(get_current_user),
         "active_agents":       8,
     }
 
-    _ANALYTICS_CACHE[days] = {"data": result, "timestamp": now}
+    _ANALYTICS_CACHE[cache_key] = {"data": result, "timestamp": now}
     return result
+
+
+@router.get("/export")
+def export_analytics_report(
+    days: int = 30,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    format: str = Query("csv", regex="^(csv|json)$"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate downloadable Executive Analytics & Datewise Ledger Report directly from database.
+    """
+    today = datetime.utcnow().date()
+    if start_date:
+        try:
+            s_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        except ValueError:
+            s_date = today - timedelta(days=days)
+    else:
+        s_date = today - timedelta(days=days)
+
+    if end_date:
+        try:
+            e_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            e_date = today
+    else:
+        e_date = today
+
+    # Aggregate queries datewise directly from DB
+    date_queries = db.query(
+        func.date(QueryLog.created_at).label("log_date"),
+        func.count(QueryLog.id).label("total_queries"),
+        func.coalesce(func.sum(QueryLog.tokens_used), 0).label("tokens_used"),
+        func.coalesce(func.sum(case((QueryLog.hallucination_detected == True, 1), else_=0)), 0).label("hallucinations"),
+        func.coalesce(func.avg(QueryLog.confidence_score), 0.0).label("avg_confidence")
+    ).filter(
+        func.date(QueryLog.created_at) >= str(s_date),
+        func.date(QueryLog.created_at) <= str(e_date)
+    ).group_by(func.date(QueryLog.created_at)).all()
+
+    # Aggregate docs uploaded datewise directly from DB
+    date_docs = db.query(
+        func.date(Document.uploaded_at).label("doc_date"),
+        func.count(Document.id).label("docs_uploaded")
+    ).filter(
+        func.date(Document.uploaded_at) >= str(s_date),
+        func.date(Document.uploaded_at) <= str(e_date)
+    ).group_by(func.date(Document.uploaded_at)).all()
+
+    docs_by_date = {str(d.doc_date): int(d.docs_uploaded) for d in date_docs if d.doc_date}
+
+    ledger_map = {}
+    for r in date_queries:
+        ds = str(r.log_date)
+        tot_q = int(r.total_queries or 0)
+        hal_q = int(r.hallucinations or 0)
+        tok = int(r.tokens_used or 0)
+        conf = round(float(r.avg_confidence or 0.0), 2)
+        grounding = round((tot_q - hal_q) / tot_q * 100, 1) if tot_q > 0 else 100.0
+        ledger_map[ds] = {
+            "date": ds,
+            "queries": tot_q,
+            "tokens": tok,
+            "hallucinations": hal_q,
+            "grounded_queries": tot_q - hal_q,
+            "avg_confidence": conf,
+            "grounding_pass_rate": f"{grounding}%",
+            "docs_uploaded": docs_by_date.get(ds, 0)
+        }
+
+    for ds, doc_cnt in docs_by_date.items():
+        if ds not in ledger_map:
+            ledger_map[ds] = {
+                "date": ds,
+                "queries": 0,
+                "tokens": 0,
+                "hallucinations": 0,
+                "grounded_queries": 0,
+                "avg_confidence": 0.0,
+                "grounding_pass_rate": "100%",
+                "docs_uploaded": doc_cnt
+            }
+
+    sorted_records = [ledger_map[k] for k in sorted(ledger_map.keys(), reverse=True)]
+
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Date", "Total Queries", "Tokens Consumed", "Docs Uploaded", "Flagged Hallucinations", "Grounded Queries", "Avg Confidence Score", "Grounding Pass Rate"])
+        for row in sorted_records:
+            writer.writerow([
+                row["date"],
+                row["queries"],
+                row["tokens"],
+                row["docs_uploaded"],
+                row["hallucinations"],
+                row["grounded_queries"],
+                row["avg_confidence"],
+                row["grounding_pass_rate"]
+            ])
+        csv_content = output.getvalue()
+        filename = f"VeriRAG_Executive_Analytics_Report_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    return {
+        "report": "VeriRAG Executive Analytics Ledger",
+        "generated_at": datetime.utcnow().isoformat(),
+        "start_date": str(s_date),
+        "end_date": str(e_date),
+        "total_days_analyzed": (e_date - s_date).days + 1,
+        "datewise_ledger": sorted_records
+    }
 
 
 @router.get("/audit")
@@ -277,4 +417,5 @@ def get_audit_logs(current_user: dict = Depends(get_current_user), db: Session =
         "hallucinated": l.hallucination_detected,
         "timestamp":    l.created_at.isoformat()
     } for l in logs]}
+
 

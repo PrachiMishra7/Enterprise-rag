@@ -6,7 +6,7 @@ import {
   Send, User, Bot, AlertTriangle, FileText, Cpu, ChevronDown, 
   Users, Scale, Landmark, Monitor, Sparkles, Check, Zap, Server, 
   X, ThumbsUp, ThumbsDown, History, MessageSquare, Clock, Plus, 
-  Trash2, ChevronRight, ArrowRight, Eye
+  Trash2, ChevronRight, ArrowRight, Eye, Mic, MicOff, Volume2, VolumeX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -57,7 +57,88 @@ export default function Chat({ queryInput, setQueryInput }) {
   const [historyItems, setHistoryItems] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingIndex, setSpeakingIndex] = useState(null);
+  const recognitionRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Initialize Web Speech API for voice dictation
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setQueryInput(prev => (prev ? `${prev} ${transcript}` : transcript));
+        }
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [setQueryInput]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (err) {
+        console.error('Error starting speech:', err);
+      }
+    }
+  };
+
+  const toggleSpeak = (text, index) => {
+    if (!window.speechSynthesis) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    if (speakingIndex === index) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+    } else {
+      window.speechSynthesis.cancel();
+      // Clean markdown tags for clean vocal readout
+      const cleanText = text.replace(/[*_#`~\[\]]/g, '').replace(/https?:\/\/\S+/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.onend = () => setSpeakingIndex(null);
+      utterance.onerror = () => setSpeakingIndex(null);
+      setSpeakingIndex(index);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -316,15 +397,28 @@ export default function Chat({ queryInput, setQueryInput }) {
                   {m.role === 'ai' && i > 0 && (
                     <div className="flex items-center gap-2 mt-2">
                       <button 
+                        onClick={() => toggleSpeak(m.content, i)}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors cursor-pointer ${
+                          speakingIndex === i 
+                            ? 'bg-primary text-primary-foreground border-primary shadow-xs' 
+                            : 'border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                        }`}
+                        title={speakingIndex === i ? "Stop speaking" : "Listen to answer"}
+                      >
+                        {speakingIndex === i ? <VolumeX className="w-3.5 h-3.5 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
+                        <span className="text-[10px] font-medium">{speakingIndex === i ? 'Stop' : 'Listen'}</span>
+                      </button>
+
+                      <button 
                         onClick={() => handleFeedback(m.query_id, 1, i)} 
-                        className={`p-1.5 rounded-lg border transition-colors ${m.feedback === 1 ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${m.feedback === 1 ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
                         title="Helpful"
                       >
                         <ThumbsUp className="w-3 h-3" />
                       </button>
                       <button 
                         onClick={() => handleFeedback(m.query_id, -1, i)} 
-                        className={`p-1.5 rounded-lg border transition-colors ${m.feedback === -1 ? 'bg-rose-500/20 text-rose-500 border-rose-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${m.feedback === -1 ? 'bg-rose-500/20 text-rose-500 border-rose-500/40' : 'border-border text-muted-foreground hover:bg-secondary'}`}
                         title="Inaccurate / Hallucinated"
                       >
                         <ThumbsDown className="w-3 h-3" />
@@ -361,23 +455,42 @@ export default function Chat({ queryInput, setQueryInput }) {
             </button>
           </div>
 
-          {/* Textarea Input */}
+          {/* Textarea Input with Voice Mic & Send */}
           <div className="flex gap-2.5 items-end relative">
             <textarea 
-              className="flex-1 min-h-[50px] max-h-32 p-3 pr-12 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow shadow-xs" 
-              placeholder="Ask anything across indexed policies, contracts, or engineering docs..." 
+              className="flex-1 min-h-[50px] max-h-32 p-3 pr-24 bg-background border border-border text-foreground placeholder:text-muted-foreground rounded-xl text-xs sm:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow shadow-xs" 
+              placeholder={isListening ? "Listening... Speak your question now." : "Ask anything across indexed policies, contracts, or engineering docs..."} 
               value={queryInput}
               onChange={e => setQueryInput(e.target.value)}
               onKeyDown={handleKeyDown}
               rows="1"
             />
-            <button 
-              className="absolute right-2.5 bottom-2.5 w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg flex items-center justify-center transition-all disabled:opacity-40 shadow-xs" 
-              onClick={() => sendQuery()} 
-              disabled={!queryInput.trim() || typing}
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
+            
+            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
+              {/* Voice Speech-to-Text Button */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                  isListening 
+                    ? 'bg-rose-500 text-white animate-pulse shadow-rose-500/30' 
+                    : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground border border-border'
+                }`}
+                title={isListening ? "Stop listening" : "Speak query (Speech-to-Text)"}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+
+              {/* Send Button */}
+              <button 
+                className="w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg flex items-center justify-center transition-all disabled:opacity-40 shadow-xs cursor-pointer" 
+                onClick={() => sendQuery()} 
+                disabled={!queryInput.trim() || typing}
+                title="Send query"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

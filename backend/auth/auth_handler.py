@@ -54,7 +54,10 @@ ROLE_PERMISSIONS = {
 class AuthHandler:
     def seed_demo_users(self, db: Session):
         demo_users = [
-            {"name": "Alice (Employee)", "email": "employee@company.com", "password": "Employee@123", "role": "employee", "department": "general"},
+            {"name": "Alice (General Staff)", "email": "employee@company.com", "password": "Employee@123", "role": "employee", "department": "general"},
+            {"name": "Hannah (HR Employee)", "email": "employee_hr@company.com", "password": "Employee@123", "role": "employee", "department": "hr"},
+            {"name": "Leo (Legal Employee)", "email": "employee_legal@company.com", "password": "Employee@123", "role": "employee", "department": "legal"},
+            {"name": "Felix (Finance Employee)", "email": "employee_finance@company.com", "password": "Employee@123", "role": "employee", "department": "finance"},
             {"name": "Bob (Manager)", "email": "manager@company.com", "password": "Manager@123", "role": "manager", "department": "general"},
             {"name": "Carol (HR Admin)", "email": "hr@company.com", "password": "Hr@123", "role": "hr_admin", "department": "hr"},
             {"name": "Dave (Legal Admin)", "email": "legal@company.com", "password": "Legal@123", "role": "legal_admin", "department": "legal"},

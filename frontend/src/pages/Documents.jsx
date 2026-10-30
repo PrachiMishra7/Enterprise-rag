@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { apiCall } from '../utils/api';
+import { apiCall, API_BASE } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, Shield, HardDrive, Inbox, Search, Filter, 
   Layers, FolderOpen, AlertCircle, RefreshCw, Sparkles, 
   X, Settings2, Trash2, Check, Loader2, LayoutGrid, List, FileCode, CheckCircle2,
-  Eye, Download
+  Eye, Download, FileSpreadsheet, Calendar
 } from 'lucide-react';
 import DocumentPreviewModal from '../components/DocumentPreviewModal';
 
@@ -15,6 +15,7 @@ export default function Documents({ documents = [], loadDocuments }) {
   const isAdmin = user?.role === 'admin' || user?.role === 'hr_admin';
 
   const [loading, setLoading] = useState(false);
+  const [exportingCatalog, setExportingCatalog] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedAccess, setSelectedAccess] = useState('All');
@@ -43,6 +44,31 @@ export default function Documents({ documents = [], loadDocuments }) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportCatalog = async () => {
+    try {
+      setExportingCatalog(true);
+      const downloadUrl = `${API_BASE}/documents/export?format=csv`;
+      const res = await fetch(downloadUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (!res.ok) throw new Error("Document catalog export failed");
+      const blob = await res.blob();
+      const filename = `VeriRAG_Document_Catalog_${new Date().toISOString().slice(0,10)}.csv`;
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert("Failed to export document catalog: " + err.message);
+    } finally {
+      setExportingCatalog(false);
     }
   };
 
@@ -151,11 +177,21 @@ export default function Documents({ documents = [], loadDocuments }) {
           <div className="flex items-center gap-2">
             <button 
               onClick={fetchDocs}
-              className="px-3 py-1.5 rounded-lg bg-card border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 text-xs font-medium shadow-xs"
+              className="px-3 py-1.5 rounded-lg bg-card border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 text-xs font-medium shadow-xs cursor-pointer"
               title="Refresh document repository"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
               <span>Refresh</span>
+            </button>
+
+            <button
+              onClick={handleExportCatalog}
+              disabled={exportingCatalog}
+              className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-xs cursor-pointer"
+              title="Download full enterprise document catalog report as CSV"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>{exportingCatalog ? 'Exporting...' : 'Export Catalog (CSV)'}</span>
             </button>
           </div>
         </div>
@@ -277,6 +313,7 @@ export default function Documents({ documents = [], loadDocuments }) {
                     <th className="py-3 px-4">Format</th>
                     <th className="py-3 px-4">Department</th>
                     <th className="py-3 px-4">Required Access</th>
+                    <th className="py-3 px-4">Uploaded Date</th>
                     <th className="py-3 px-4 text-center">Chunks</th>
                     <th className="py-3 px-4 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
@@ -306,6 +343,16 @@ export default function Documents({ documents = [], loadDocuments }) {
                           <Shield className="w-3 h-3 text-muted-foreground" />
                           {d.access_level?.replace('_', ' ') || 'employee'}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-muted-foreground whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-[11px]">
+                          <Calendar className="w-3 h-3 text-muted-foreground" />
+                          <span>
+                            {d.uploaded_at 
+                              ? new Date(d.uploaded_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                              : 'System Standard'}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-center font-mono text-muted-foreground">
                         {d.chunk_count || 0}
